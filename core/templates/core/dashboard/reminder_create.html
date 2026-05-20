@@ -1,0 +1,86 @@
+{% extends 'core/dashboard/dashboard.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>🔔 Create Reminder</h1>
+    <p class="dashboard-subtitle">Schedule a one-time or recurring reminder for yourself or a student</p>
+  </div>
+
+  <div style="max-width:720px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:32px;">
+    <form method="post" id="reminder-form" style="display:flex;flex-direction:column;gap:20px;">
+      {% csrf_token %}
+
+      <div>
+        <label style="display:block;font-weight:600;margin-bottom:6px;">Reminder Type *</label>
+        <select name="reminder_type" required class="form-control">
+          <option value="">Select type</option>
+          {% for val,label in rtypes %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;">Student (optional)</label>
+          <select name="student" class="form-control">
+            <option value="">— General / Class-wide —</option>
+            {% for s in students %}
+            <option value="{{ s.id }}">{{ s.name }} ({{ s.roll_number }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;">Subject (optional)</label>
+          <select name="subject" class="form-control">
+            <option value="">— Not subject-specific —</option>
+            {% for sub in subjects %}
+            <option value="{{ sub.id }}">{{ sub.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:600;margin-bottom:6px;">Title *</label>
+        <input type="text" name="title" required class="form-control"
+               placeholder="e.g. Assignment 3 Deadline Reminder" />
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:600;margin-bottom:6px;">Message *</label>
+        <textarea name="message" rows="3" required class="form-control"
+                  placeholder="What should be communicated?"></textarea>
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:600;margin-bottom:6px;">Scheduled For *</label>
+        <input type="datetime-local" name="scheduled_for" required class="form-control" />
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;">Recurrence</label>
+          <select name="recurrence" class="form-control">
+            {% for val,label in recurrences %}
+            <option value="{{ val }}" {% if val == 'none' %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;">Recurrence Until (optional)</label>
+          <input type="date" name="recurrence_until" class="form-control" />
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-bell"></i> Schedule Reminder
+        </button>
+        <a href="{% url 'core:reminder_list' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Search — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function(){ const saved=localStorage.getItem('theme'); const t=saved||'dark'; document.documentElement.setAttribute('data-theme',t); })();
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-search"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/dashboard/">Dashboard</a>
+            <a href="/search/" class="active">Search</a>
+            <a href="/logout/">Logout</a>
+            <button class="theme-toggle" id="themeToggle"><svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/></svg><svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+        </div>
+    </nav>
+    <div style="max-width:1000px;margin:0 auto;padding:2rem;">
+        <div class="page-wrapper">
+            <div class="form-card">
+                <div class="form-header">
+                    <h2><i class="fas fa-search"></i> Global Search</h2>
+                    <p>Search students, teachers, and subjects across the whole system</p>
+                </div>
+                <form method="GET" style="display:flex;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;">
+                    <input type="text" name="q" value="{{ query }}"
+                        placeholder="Search by name, roll number, email, subject code..."
+                        style="flex:1;padding:14px 20px;border-radius:12px;background:var(--input-bg);color:var(--text-primary);border:2px solid var(--border-color);font-size:1rem;min-width:280px;">
+                    <button type="submit" class="btn-primary" style="padding:14px 24px;border-radius:12px;white-space:nowrap;">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </form>
+
+                {% if query %}
+                <div style="display:grid;gap:1.5rem;">
+                    <!-- Students -->
+                    <div>
+                        <h3 style="color:var(--text-primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;">
+                            <i class="fas fa-user-graduate" style="color:#667eea;"></i>
+                            Students ({{ results.students|length }})
+                        </h3>
+                        {% if results.students %}
+                        <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
+                            {% for s in results.students %}
+                            <div style="background:var(--bg-card);border-radius:12px;padding:.85rem 1.2rem;border:1px solid var(--border-color);min-width:200px;">
+                                <a href="/students-list/" style="text-decoration:none;color:inherit;">
+                                    <div style="font-weight:600;color:var(--text-primary);">{{ s.name }}</div>
+                                    <div style="font-size:.8rem;color:var(--text-secondary);">Class {{ s.student_class }} | Roll: {{ s.roll_number }}</div>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p style="color:var(--text-secondary);font-size:.9rem;">No students matched "{{ query }}".</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Teachers -->
+                    <div>
+                        <h3 style="color:var(--text-primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;">
+                            <i class="fas fa-chalkboard-teacher" style="color:#10b981;"></i>
+                            Teachers ({{ results.teachers|length }})
+                        </h3>
+                        {% if results.teachers %}
+                        <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
+                            {% for t in results.teachers %}
+                            <div style="background:var(--bg-card);border-radius:12px;padding:.85rem 1.2rem;border:1px solid var(--border-color);min-width:200px;">
+                                <div style="font-weight:600;color:var(--text-primary);">{{ t.get_full_name }}</div>
+                                <div style="font-size:.8rem;color:var(--text-secondary);">{{ t.email|default:"No email" }} | {{ t.department.name|default:"No Dept" }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p style="color:var(--text-secondary);font-size:.9rem;">No teachers matched "{{ query }}".</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Subjects -->
+                    <div>
+                        <h3 style="color:var(--text-primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;">
+                            <i class="fas fa-book" style="color:#f59e0b;"></i>
+                            Subjects ({{ results.subjects|length }})
+                        </h3>
+                        {% if results.subjects %}
+                        <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
+                            {% for sub in results.subjects %}
+                            <div style="background:var(--bg-card);border-radius:12px;padding:.85rem 1.2rem;border:1px solid var(--border-color);min-width:160px;">
+                                <div style="font-weight:600;color:var(--text-primary);">{{ sub.name }}</div>
+                                <div style="font-size:.8rem;color:var(--text-secondary);">Code: {{ sub.code }} | {{ sub.total_marks }} marks</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p style="color:var(--text-secondary);font-size:.9rem;">No subjects matched "{{ query }}".</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align:center;padding:3rem;color:var(--text-secondary);">
+                    <i class="fas fa-search" style="font-size:3rem;margin-bottom:1rem;opacity:.2;"></i>
+                    <p>Type at least 2 characters to search across students, teachers, and subjects.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('themeToggle').addEventListener('click',function(){
+            const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+            document.documentElement.setAttribute('data-theme',t);
+            localStorage.setItem('theme',t);
+        });
+    </script>
+</body>
+</html>

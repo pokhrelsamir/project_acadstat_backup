@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Online Exam — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .ec-wrapper{max-width:900px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .back-link{display:inline-flex;align-items:center;gap:8px;color:var(--pri);text-decoration:none;font-weight:600;margin-bottom:20px;}
+        .card{background:white;border-radius:16px;padding:28px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .card h2{margin:0 0 18px 0;font-size:1.05rem;color:#1e293b;}
+        .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+        .form-group{margin-bottom:14px;}
+        .form-group.full{grid-column:1/-1;}
+        .form-group label{font-size:.82rem;font-weight:700;color:#64748b;display:block;margin-bottom:4px;}
+        .form-group input,.form-group select{width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;font-family:inherit;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-ok{background:var(--ok);color:white;}
+        .checkbox-group{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px;}
+        .checkbox-item{display:flex;align-items:center;gap:6px;font-size:.88rem;color:#374151;}
+        #questionBuilder{display:none;padding:20px;background:#f8fafc;border-radius:10px;border:2px dashed #e2e8f0;margin-top:14px;}
+        .q-row{display:grid;grid-template-columns:1fr 120px 90px;gap:10px;margin-bottom:10px;align-items:end;}
+        .badge{padding:2px 10px;border-radius:8px;font-size:.72rem;font-weight:700;}
+        .badge-opt{background:#e0e7ff;color:#3730a3;}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-graduation-cap"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/online-exams/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Teacher</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="ec-wrapper">
+        <a href="{% url 'core:online_exam_list' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Exams</a>
+
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;
+             color:{% if m.tags=='error' %}#dc2626{% else %}#16a34a{% endif %};
+             background:{% if m.tags=='error' %}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <!-- Exam Config Card -->
+            <div class="card">
+                <h2><i class="fas fa-cog" style="color:var(--pri);"></i> Exam Configuration</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Exam Title *</label>
+                        <input type="text" name="title" required placeholder="e.g. Mid-term Test 2">
+                    </div>
+                    <div class="form-group">
+                        <label>Subject *</label>
+                        <select name="subject" required>
+                            <option value="">Select Subject</option>
+                            {% for subj in teacher_subjects %}<option value="{{ subj.id }}">{{ subj.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Target Class *</label>
+                        <input type="text" name="target_class" required placeholder="e.g. 10, XI, S2">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Section</label>
+                        <input type="text" name="target_section" placeholder="e.g. A, B (optional)">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Marks</label>
+                        <input type="number" name="total_marks" value="100" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Passing Marks</label>
+                        <input type="number" name="passing_marks" value="40" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" name="duration_minutes" value="60" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Attempts</label>
+                        <input type="number" name="max_attempts" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Start At *</label>
+                        <input type="datetime-local" name="start_at" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End At *</label>
+                        <input type="datetime-local" name="end_at" required>
+                    </div>
+                    <div class="form-group full">
+                        <label>Settings</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item"><input type="checkbox" name="is_published" checked> Published</label>
+                            <label class="checkbox-item"><input type="checkbox" name="show_result_immediately" checked> Show result immediately</label>
+                            <label class="checkbox-item"><input type="checkbox" name="shuffle_questions" checked> Shuffle questions</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Builder Card -->
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+                    <h2 style="margin:0;"><i class="fas fa-question" style="color:var(--pri);"></i> Questions</h2>
+                    <button type="button" class="btn btn-ok" onclick="addQuestionRow()"><i class="fas fa-plus"></i> Add Question</button>
+                </div>
+
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+                    {% for key, label in QUESTION_TYPE_CHOICES %}
+                    <button type="button" class="badge badge-opt" onclick="setType('{{ key }}')">{{ label }}</button>
+                    {% endfor %}
+                </div>
+
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left;padding:8px 12px;background:#f8fafc;border-bottom:2px solid #e2e8f0;width:40px;">#</th>
+                            <th style="text-align:left;padding:8px 12px;background:#f8fafc;border-bottom:2px solid #e2e8f0;">Question Text</th>
+                            <th style="text-align:left;padding:8px 12px;background:#f8fafc;border-bottom:2px solid #e2e8f0;width:100px;">Type</th>
+                            <th style="text-align:left;padding:8px 12px;background:#f8fafc;border-bottom:2px solid #e2e8f0;width:110px;">Options (A,B,C,D)</th>
+                            <th style="text-align:left;padding:8px 12px;background:#f8fafc;border-bottom:2px solid #e2e8f0;width:60px;">Correct</th>
+                            <th style="text-align:left;padding:8px 12px;background:#f8fafc;border-bottom:2px solid #e2e8f0;width:60px;">Marks</th>
+                            <th style="text-align:left;padding:8px 12px;background:#f8fafc;border-bottom:2px solid #e2e8f0;width:40px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="questionsTable">
+                    </tbody>
+                </table>
+
+                <p style="text-align:center;color:#94a3b8;font-size:.88rem;padding:20px;" id="noQ hint">Click <b>Add Question</b> to begin building your quiz.</p>
+            </div>
+
+            <div style="text-align:right;">
+                <button type="submit" name="create_exam" value="1" class="btn btn-primary" style="padding:14px 32px;font-size:1rem;">
+                    <i class="fas fa-save"></i> Create Exam
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let qCount = 0;
+        function addQuestionRow(){
+            qCount++;
+            const tbody = document.getElementById('questionsTable');
+            const row = document.createElement('tr');
+            row.innerHTML = '<td style="text-align:center;font-weight:700;color:#94a3b8;padding:8px;">'+qCount+'</td>'
+                +'<td><input type="text" name="question_text[]" required placeholder="Enter question..." style="padding:8px;border:2px solid #e2e8f0;border-radius:7px;width:100%;"></td>'
+                +'<td><select name="question_type[]" class="q-type-'+qCount+'" style="padding:8px;border:2px solid #e2e8f0;border-radius:7px;width:100%;" onchange="toggleOpts('+qCount+',this.value)">'
+                +'{% for key, label in QUESTION_TYPE_CHOICES %}<option value="{{ key }}">{{ label }}</option>{% endfor %}'
+                +'</select></td>'
+                +'<td><input type="text" name="question_option[]" id="qopts_'+qCount+'" placeholder="A,B,C,D" style="padding:8px;border:2px solid #e2e8f0;border-radius:7px;width:100%;"></td>'
+                +'<td><input type="text" name="question_correct[]" placeholder="A or True" style="padding:8px;border:2px solid #e2e8f0;border-radius:7px;width:100%;"></td>'
+                +'<td><input type="number" name="question_marks[]" value="1" min="1" style="padding:8px;border:2px solid #e2e8f0;border-radius:7px;width:100%;"></td>'
+                +'<td><button type="button" onclick="this.closest(\'tr\').remove()" style="color:#ef4444;background:none;border:none;cursor:pointer;"><i class="fas fa-trash"></i></button></td>';
+            tbody.appendChild(row);
+            document.getElementById('noQhint').style.display='none';
+        }
+        function toggleOpts(id, type){
+            const inp = document.getElementById('qopts_'+id);
+            if(type === 'MCQ'){inp.placeholder='A,B,C,D';}
+            else{inp.placeholder='N/A';inp.disabled=true;inp.value='';}
+            if(type !== 'MCQ') inp.removeAttribute('disabled');
+        }
+        function setType(t){
+            document.querySelectorAll('select[name="question_type[]"]').forEach(el=>el.value=t);
+        }
+    </script>
+</body>
+</html>

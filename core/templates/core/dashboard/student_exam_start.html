@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ exam.title }} — Exam In Progress — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .es-wrapper{max-width:800px;margin:0 auto;padding:24px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .exam-bar{background:white;border-radius:14px;padding:16px 24px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+        .exam-bar h3{margin:0;flex:1;font-size:1.05rem;color:#1e293b;}
+        .timer-box{display:flex;align-items:center;gap:8px;}
+        .timer-box .big{font-size:1.4rem;font-weight:800;color:var(--pri);font-variant-numeric:tabular-nums;}
+        .timer-box.warn .big{color:var(--warn);}
+        .timer-box.crit .big{color:var(--err);}
+        .subj-pill{padding:2px 10px;border-radius:10px;background:#e0e7ff;color:#3730a3;font-size:.75rem;font-weight:600;}
+        .q-section{position:relative;}
+        .q-card{background:white;border-radius:16px;padding:28px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .q-num{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:var(--pri);color:white;font-size:.9rem;font-weight:800;margin-bottom:12px;}
+        .q-text{font-size:1.05rem;color:#1e293b;font-weight:500;margin-bottom:16px;line-height:1.6;}
+        .q-marks{font-size:.75rem;font-weight:700;background:#fef3c7;color:#92400e;padding:2px 10px;border-radius:10px;margin-left:8px;}
+        .opt-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;}
+        .opt-list li{padding:12px 18px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer;font-size:.9rem;color:#374151;transition:.2s;display:flex;align-items:center;gap:10px;}
+        .opt-list li:hover{border-color:var(--pri);background:#f5f3ff;}
+        .opt-list li.selected{border-color:var(--pri);background:#ede9fe;font-weight:600;color:#3730a3;}
+        .opt-letter{width:28px;height:28px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+        .opt-list li.selected .opt-letter{background:var(--pri);color:white;}
+        input[type=text].sa-input{width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:.9rem;font-family:inherit;resize:vertical;min-height:100px;}
+        .nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:20px;flex-wrap:wrap;gap:10px;}
+        .question-pills{display:flex;flex-wrap:wrap;gap:6px;}
+        .q-pill{padding:6px 10px;border-radius:8px;background:#f1f5f9;color:#64748b;font-size:.75rem;cursor:pointer;border:1px solid #e2e8f0;}
+        .q-pill.visited{background:#ede9fe;color:#3730a3;border-color:var(--pri);}
+        .q-pill.current{background:var(--pri);color:white;border-color:var(--pri);}
+        .progress-bar{background:#e2e8f0;border-radius:999px;height:8px;margin-bottom:20px;}
+        .progress-fill{background:linear-gradient(90deg,var(--pri),var(--ok));height:100%;border-radius:999px;transition:width .3s;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 22px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-ghost{background:#f1f5f9;color:#64748b;}
+        .btn-err{background:var(--err);color:white;}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-graduation-cap"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/student-exams/"><i class="fas fa-arrow-left"></i> My Exams</a>
+            <a href="/student-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        </div>
+    </nav>
+    <div class="es-wrapper">
+        <div class="exam-bar">
+            <h3>{{ exam.title }} <span class="subj-pill">{{ exam.subject.name }}</span></h3>
+            <div class="timer-box" id="timerBox">
+                <span><i class="fas fa-clock" style="color:var(--pri);"></i></span>
+                <span class="big" id="timerDisplay">{{ time_left }}s</span>
+            </div>
+            <span style="font-size:.78rem;color:#94a3b8;">
+                <i class="fas fa-lock-open"></i> Attempt {{ attempt.attempt_number }}/{{ exam.max_attempts }}
+            </span>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width:{% if questions %}{{ forloop.counter|div:questions|length|floatformat:0 }}{% else %}0{% endif %}%;"></div>
+        </div>
+
+        <div class="q-section">
+            {% for q in questions %}
+            <div class="q-card" id="q-{{ q.id }}" data-q-id="{{ q.id }}">
+                <form method="post" id="form-{{ q.id }}" action="{% url 'core:student_exam_submit' exam.id %}">
+                    {% csrf_token %}
+                    <div class="q-num">{{ forloop.counter }}</div>
+                    <div class="q-text">
+                        {{ q.question_text }}
+                        <span class="q-marks">{{ q.marks }} mark{{ q.marks|pluralize }}</span>
+                    </div>
+                    <input type="hidden" name="q_{{ q.id }}" id="q-{{ q.id }}-val">
+
+                    {% if q.question_type == 'MCQ' %}
+                    <ul class="opt-list" id="opts-{{ q.id }}">
+                        {% for opt in q.options %}
+                        <li onclick="pickOpt(this, '{{ q.id }}', '{{ opt.label }}')">
+                            <span class="opt-letter">{{ opt.label }}</span> {{ opt.text }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+
+                    {% elif q.question_type == 'TRUE_FALSE' %}
+                    <ul class="opt-list" id="opts-{{ q.id }}">
+                        <li onclick="pickOpt(this, '{{ q.id }}', 'True')">
+                            <span class="opt-letter">T</span> True
+                        </li>
+                        <li onclick="pickOpt(this, '{{ q.id }}', 'False')">
+                            <span class="opt-letter">F</span> False
+                        </li>
+                    </ul>
+
+                    {% else %}
+                    <textarea name="q_{{ q.id }}" class="sa-input"
+                              placeholder="{% if q.question_type == 'SHORT_ANSWER' %}Type your short answer here...{% else %}Type your detailed answer here...{% endif %}"
+                              oninput="markVisited({{ q.id }})"></textarea>
+                    {% endif %}
+                </form>
+            </div>
+            {% endfor %}
+
+            <div class="nav-row">
+                <div class="question-pills">
+                    {% for q in questions %}
+                    <div class="q-pill" id="pill-{{ q.id }}" onclick="scrollToQ({{ q.id }})">
+                        {{ forloop.counter }}
+                        {% if question.id == q.id %}
+                        <div style="width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;margin-left:4px;"></div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <button onclick="history.back()" class="btn btn-ghost"><i class="fas fa-times"></i> Exit</button>
+                    <button class="btn btn-primary" onclick="submitExam()"><i class="fas fa-check-circle"></i> Submit Exam</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let expirationSec = {{ time_left }};
+        const attemptId = '{{ attempt.id }}';
+
+        // Countdown
+
+        setInterval(() => {
+            if (expirationSec < 0) return;
+            const rem = Math.max(0, expirationSec);
+            document.getElementById('timerDisplay').textContent = fmtTime(rem);
+            if (rem < 300 && rem > 60) {
+                document.getElementById('timerDisplay').classList.add('warn');
+                document.getElementById('timerDisplay').classList.remove('crit');
+            } else if (rem <= 60) {
+                document.getElementById('timerDisplay').classList.add('crit');
+            }
+            if (rem === 0) {
+                submitExam(true);
+            }
+            expirationSec--;
+        }, 1000);
+
+        function fmtTime(s) {
+            const m = Math.floor(s/60);
+            const sec = s % 60;
+            return (m > 0 ? m+'m ' : '') + sec+'s';
+        }
+
+        function getHidden(id) { return document.getElementById('q-'+id+'-val'); }
+
+        function markVisited(id) {
+            getHidden(id).value = 'answered';
+            const pill = document.getElementById('pill-'+id);
+            if (pill) { pill.classList.add('visited'); pill.classList.remove('current'); }
+        }
+
+        function pickOpt(li, qId, label) {
+            const list = document.getElementById('opts-'+qId);
+            list.querySelectorAll('li').forEach(el => el.classList.remove('selected'));
+            li.classList.add('selected');
+            getHidden(qId).value = label;
+            markVisited(qId);
+        }
+
+        function scrollToQ(id) {
+            document.getElementById('q-'+id).scrollIntoView({behavior:'smooth', block:'center'});
+        }
+
+        function submitExam(force) {
+            if (!force) {
+                // Collect hidden values for each answered question into a single submission
+                const hf = document.createElement('form');
+                hf.method = 'POST';
+                hf.action = "{% url 'core:student_exam_submit' exam.id %}";
+                document.querySelectorAll('.q-card').forEach(card => {
+                    const form = card.querySelector('form');
+                    if (!form) return;
+                    const qid = card.dataset.qId;
+                    const inpVal = card.querySelector('input[name="q_'+qid+'"], textarea[name="q_'+qid+'"]');
+                    if (inpVal && inpVal.value) {
+                        const ni = document.createElement('input');
+                        ni.type = 'hidden'; ni.name = 'q_'+qid; ni.value = inpVal.value;
+                        hf.appendChild(ni);
+                    }
+                });
+                document.body.appendChild(hf);
+                hf.submit();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head><title>Fee Reminder</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #ef4444; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="margin:0;">&#128176; Fee Payment Reminder</h1>
+    <p style="margin:5px 0 0;">{{ student_name }}</p>
+  </div>
+  <div style="background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none;">
+    <p>Dear {{ guardian_name }},</p>
+    <p>This is a friendly reminder that the following fee payment is due:</p>
+    <div style="background:#fff; border:1px solid #e5e7eb; padding:15px; border-radius:8px; margin:15px 0;">
+      <table style="width:100%;">
+        <tr><td style="padding:8px 0; font-weight:bold; width:140px;">Student:</td><td>{{ student_name }}</td></tr>
+        <tr><td style="padding:8px 0; font-weight:bold;">Fee Type:</td><td>{{ fee_type }}</td></tr>
+        <tr><td style="padding:8px 0; font-weight:bold;">Amount Due:</td><td><strong style="color:#ef4444;">{{ amount }}</strong></td></tr>
+        <tr><td style="padding:8px 0; font-weight:bold;">Due Date:</td><td>{{ due_date }}</td></tr>
+        {% if receipt_number %}
+        <tr><td style="padding:8px 0; font-weight:bold;">Receipt No:</td><td>{{ receipt_number }}</td></tr>
+        {% endif %}
+      </table>
+    </div>
+    <div style="text-align:center; margin: 20px 0;">
+      <a href="{{ receipt_url }}" style="background:#ef4444; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold;">View Receipt</a>
+    </div>
+    <p style="font-size:0.85em; color:#6b7280;">Please make the payment before the due date to avoid late fees. Contact the school office for any queries.</p>
+  </div>
+</body>
+</html>

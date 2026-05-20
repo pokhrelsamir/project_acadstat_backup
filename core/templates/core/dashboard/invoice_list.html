@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoices — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .inv-wrapper{max-width:1200px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .filter-bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px;background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .filter-bar select{padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;}
+        .tbl-card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;overflow-x:auto;}
+        .data-table{width:100%;border-collapse:collapse;font-size:.88rem;}
+        .data-table th{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;padding:12px;text-align:left;font-weight:600;}
+        .data-table td{padding:12px 8px;border-bottom:1px solid #f1f5f9;}
+        .data-table tr:hover td{background:#f8fafc;}
+        .st-DRAFT{color:var(--warn);}.st-SENT{color:var(--pri);}.st-PAID{color:var(--ok);font-weight:700;}
+        .st-OVERDUE{color:var(--err);}.st-CANCELLED{color:#94a3b8;}
+        .btn-sm{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-size:.82rem;font-weight:600;}
+        .btn-view{background:var(--pri);color:white;}.btn-paid{background:var(--ok);color:white;}
+        @media(max-width:768px){.inv-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-file-invoice"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/invoices/create/"><i class="fas fa-plus"></i> New Invoice</a>
+            <a href="/subscriptions/"><i class="fas fa-crown"></i> Subscriptions</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="inv-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-file-invoice-dollar"></i> Invoices</h1>
+            <a href="{% url 'core:invoice_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Invoice
+            </a>
+        </div>
+        <div class="filter-bar">
+            <form method="get" style="display:flex;gap:12px;align-items:center;">
+                <select name="status" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    {% for val, label in status_choices %}
+                    <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+        <div class="tbl-card">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Invoice No</th><th>Issued To</th>
+                        <th>Amount</th><th>Tax</th><th>Total</th>
+                        <th>Status</th><th>Issue Date</th><th>Due Date</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for inv in invoices %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ inv.invoice_number }}</strong></td>
+                    <td>{{ inv.issued_to }}</td>
+                    <td>Rs. {{ inv.amount|floatformat:2 }}</td>
+                    <td>Rs. {{ inv.tax_amount|floatformat:2 }}</td>
+                    <td><strong>Rs. {{ inv.total_amount|floatformat:2 }}</strong></td>
+                    <td><span class="st-{{ inv.status }}">{{ inv.get_status_display }}</span></td>
+                    <td>{{ inv.issue_date|date:"M d, Y" }}</td>
+                    <td>{{ inv.due_date|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{% url 'core:invoice_detail' inv.invoice_number %}" class="btn-sm btn-view">View</a>
+                        {% if inv.status != 'PAID' %}
+                        <a href="{% url 'core:invoice_mark_paid' inv.id %}" class="btn-sm btn-paid"
+                           onclick="return confirm('Mark this invoice as paid?')">Mark Paid</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:30px;">No invoices yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Leave Requests — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .ll-wrapper{max-width:900px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .lb{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.72rem;font-weight:700;}
+        .lb-pending{background:#fef3c7;color:#92400e;}
+        .lb-approved{background:#d1fae5;color:#065f46;}
+        .lb-rejected{background:#fee2e2;color:#991b1b;}
+        .lb-cancelled{background:#f1f5f9;color:#64748b;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-sm{padding:6px 12px;font-size:.78rem;}
+        .btn-warn{background:var(--warn);color:white;}
+        .leave-card{background:white;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:14px;display:flex;flex-direction:column;gap:10px;}
+        .leave-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+        .leave-header h4{margin:0;font-size:1rem;font-weight:700;color:#1e293b;}
+        .leave-body{font-size:.86rem;color:#64748b;line-height:1.6;}
+        .leave-body i{color:var(--pri);margin-right:4px;}
+        .leave-actions{display:flex;gap:8px;flex-wrap:wrap;}
+        .filter-row{display:flex;gap:10px;margin-bottom:18px;background:white;border-radius:10px;padding:12px 18px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+        .filter-row select{padding:7px 10px;border:2px solid #e2e8f0;border-radius:7px;font-size:.82rem;}
+        .sub-info{background:#f8fafc;border-radius:8px;padding:10px 14px;margin-top:6px;font-size:.82rem;}
+        .sub-info strong{color:#374151;}
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-calendar-alt"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/leaves/calendar/"><i class="fas fa-calendar"></i> Calendar</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="ll-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-calendar-alt"></i> My Leave Requests</h1>
+            <a href="{% url 'core:teacher_leave_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Apply for Leave</a>
+        </div>
+
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;
+             color:{% if m.tags=='error' %}#dc2626{% else %}#16a34a{% endif %};
+             background:{% if m.tags=='error' %}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+
+        <div class="filter-row">
+            <label style="font-size:.82rem;font-weight:600;color:#64748b;padding-top:6px;">Status:</label>
+            <select onchange="location.href='?status='+this.value">
+                <option value="">All</option>
+                {% for key, label in LEAVE_STATUS_CHOICES %}
+                <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% for leave in leaves %}
+        <div class="leave-card">
+            <div class="leave-header">
+                <div>
+                    <h4>
+                        {% for key, label in LEAVE_TYPE_CHOICES %}{% if key == leave.leave_type %}<i class="fas fa-tag" style="color:var(--pri);margin-right:6px;"></i>{{ label }}{% endif %}{% endfor %}
+                        &nbsp;<span class="lb lb-{{ leave.status|lower }}">{{ leave.get_status_display }}</span>
+                    </h4>
+                    <div style="font-size:.78rem;color:#94a3b8;">
+                        #{{ leave.id }} — {{ leave.created_at|date:'M d, Y' }}
+                    </div>
+                </div>
+                <div class="leave-actions">
+                    <a href="{% url 'core:teacher_leave_detail' leave_id=leave.id %}" class="btn btn-sm" style="background:#f1f5f9;color:#64748b;">Details</a>
+                    {% if leave.status == 'PENDING' %}
+                    <a href="{% url 'core:teacher_leave_detail' leave_id=leave.id %}?cancel=true" class="btn btn-warn btn-sm"
+                       onclick="return confirm('Cancel this leave request?')"><i class="fas fa-times"></i> Cancel</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="leave-body">
+                <p><i class="fas fa-calendar"></i> <b>{{ leave.start_date|date:'M d, Y' }}</b> to <b>{{ leave.end_date|date:'M d, Y' }}</b>
+                    &nbsp;(&nbsp;<b>{{ leave.days_count }}</b> day{{ leave.days_count|pluralize }}&nbsp;)</p>
+                <p><i class="fas fa-align-left"></i> {{ leave.reason }}</p>
+                {% if leave.substitute_teacher %}
+                <div class="sub-info">
+                    <i class="fas fa-user-friend" style="color:var(--warn);"></i>
+                    Substitute: <strong>{{ leave.substitute_teacher.get_full_name }}</strong>
+                </div>
+                {% endif %}
+                {% if leave.approved_by %}
+                <div class="sub-info">
+                    <i class="fas fa-check-circle" style="color:{% if leave.status == 'APPROVED' %}var(--ok){% else %}var(--err){% endif %};"></i>
+                    By: <strong>{{ leave.approved_by.get_full_name }} | {{ leave.approved_at|date:'M d, Y' }}</strong>
+                    {% if leave.approval_reason %}<br><i class="fas fa-comment" style="color:#94a3b8;"></i> {{ leave.approval_reason }}{% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:80px 20px;color:#94a3b8;">
+            <i class="fas fa-calendar-times" style="font-size:3rem;margin-bottom:14px;display:block;"></i>
+            <p>No leave requests found. <a href="{% url 'core:teacher_leave_create' %}" style="color:var(--pri);">Apply for leave</a>.</p>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

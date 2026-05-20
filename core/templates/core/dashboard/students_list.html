@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students List — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .page-header p{color:#64748b;font-size:.9rem;}
+        .action-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all .3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:white;}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(102,126,234,.4);}
+        .btn-danger{background:#ef4444;color:white;}
+        .btn-danger:hover{background:#dc2626;}
+        .btn-sm{padding:6px 12px;font-size:.82rem;}
+        .filter-section{background:white;border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;display:flex;gap:12px;flex-wrap:wrap;align-items:end;}
+        .filter-section label{font-size:.8rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;}
+        .filter-section select,.filter-section input{padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;min-width:140px;}
+        .table-card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;overflow-x:auto;}
+        .data-table{width:100%;border-collapse:collapse;}
+        .data-table th{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:14px 12px;text-align:left;font-weight:600;font-size:.85rem;}
+        .data-table td{padding:12px;border-bottom:1px solid #f1f5f9;color:#374151;font-size:.88rem;}
+        .data-table tr:hover td{background:#f8fafc;}
+        .profile-img{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:.8rem;}
+        .badge{padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600;}
+        .badge-success{background:#d1fae5;color:#065f46;}
+        .badge-warning{background:#fef3c7;color:#92400e;}
+        .badge-info{background:#dbeafe;color:#1e40af;}
+        .badge-pink{background:#fce7f3;color:#9d174d;}
+        .test-score{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;background:#f0fdf4;color:#16a34a;font-weight:600;font-size:.85rem;}
+        @media(max-width:768px){.filter-section{flex-direction:column;}.filter-section select,.filter-section input{width:100%;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-user-graduate"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/smart-dashboard/"><i class="fas fa-brain"></i> Analytics</a>
+            <a href="/dashboard/"><i class="fas fa-dashboard"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="container" style="max-width:1400px;">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-users"></i> Students Management</h1>
+                <p>{{ students|length }} students found</p>
+            </div>
+            <div class="action-bar">
+                <a href="/export-students-excel/" class="btn btn-primary"><i class="fas fa-file-excel"></i> Export Excel</a>
+                <a href="/add-student/" class="btn btn-primary"><i class="fas fa-user-plus"></i> Add Student</a>
+                <a href="/bulk-import-students/" class="btn" style="background:#10b981;color:white;"><i class="fas fa-file-upload"></i> Bulk Import</a>
+                <a href="/promote-students/" class="btn" style="background:#f59e0b;color:white;"><i class="fas fa-arrow-up"></i> Promote</a>
+            </div>
+        </div>
+
+        {% if messages %}
+        <div style="margin-bottom:20px;">
+            {% for message in messages %}
+                <div style="padding:12px 18px;border-radius:10px;margin-bottom:8px;font-size:.9rem;
+                    background:{% if message.tags == 'error' %}#fef2f2;color:#dc2626{% elif message.tags == 'success' %}#f0fdf4;color:#16a34a{% else %}#eff6ff;color:#2563eb{% endif %};">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="get" class="filter-section">
+            <div>
+                <label>Search</label>
+                <input type="text" name="search" placeholder="Name / Roll No / Phone" value="{{ search }}">
+            </div>
+            <div>
+                <label>Level</label>
+                <select name="level">
+                    <option value="">All Levels</option>
+                    {% for code,label in level_choices %}
+                        <option value="{{ code }}"{% if level_filter == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Class</label>
+                <select name="student_class">
+                    <option value="">All Classes</option>
+                    {% for cls in all_classes %}
+                        <option value="{{ cls }}"{% if class_filter == cls %}selected{% endif %}>{{ cls }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Section</label>
+                <select name="section">
+                    <option value="">All Sections</option>
+                    {% for sec in all_sections %}
+                        <option value="{{ sec }}"{% if section_filter == sec %}selected{% endif %}>{{ sec }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn" style="background:#667eea;color:white;"><i class="fas fa-search"></i> Filter</button>
+            <a href="/students-list/" class="btn" style="background:#f1f5f9;color:#374151;">Reset</a>
+        </form>
+
+        <div class="table-card">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Roll No.</th>
+                        <th>Class</th>
+                        <th>Section</th>
+                        <th>Level</th>
+                        <th>Phone</th>
+                        <th>Attendance %</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for s in students %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div class="profile-img">{{ s.name|slice:":1"|upper }}</div>
+                                <span style="font-weight:500;">{{ s.name }}</span>
+                            </div>
+                        </td>
+                        <td><code style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-size:.82rem;">{{ s.roll_number|default:"—"|upper }}</code></td>
+                        <td><span class="badge badge-info">{{ s.student_class }}</span></td>
+                        <td><span class="badge badge-pink">{{ s.section }}</span></td>
+                        <td>{{ s.get_level_display }}</td>
+                        <td>{{ s.phone|default:"—" }}</td>
+                        <td><span class="test-score"><i class="fas fa-chart-pie"></i> {{ s.attendance_percentage }}%</span></td>
+                        <td>
+                            <div class="action-bar" style="justify-content:flex-end;">
+                                <a href="/student-history/{{ s.id }}/" class="btn btn-sm" style="background:#dbeafe;color:#1e40af;" title="History"><i class="fas fa-history"></i></a>
+                                <a href="/manage-parent/{{ s.id }}/" class="btn btn-sm" style="background:#fef3c7;color:#92400e;" title="Parent Info"><i class="fas fa-address-book"></i></a>
+                                <a href="/mark-sheet/{{ s.id }}/" class="btn btn-sm" style="background:#d1fae5;color:#065f46;" title="Marks"><i class="fas fa-file-alt"></i></a>
+                                <a href="/edit-student/{{ s.id }}/" class="btn btn-sm" style="background:#f3f4f6;color:#374151;" title="Edit"><i class="fas fa-edit"></i></a>
+                                <form method="post" style="display:inline;" onsubmit="return confirm('Delete {{ s.name }}?\\nThis will also delete the associated user account.');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="student_id" value="{{ s.id }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:40px;">No students found.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

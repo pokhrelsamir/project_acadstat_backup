@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Schedule — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .ex-wrapper{max-width:1100px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh-70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-end;}
+        .form-row label{font-size:.82rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;}
+        .card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .ex-grid{display:grid;gap:16px;}
+        .ex-card{background:#f8fafc;border-radius:14px;padding:20px;border:1px solid #e2e8f0;transition:.3s;}
+        .ex-card:hover{border-color:var(--pri);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08);}
+        .ex-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+        .ex-top h3{margin:0;font-size:1.05rem;color:#1e293b;}
+        .ex-type{padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:600;}
+        .type-terminal{background:rgba(102,126,234,.12);color:var(--pri);}
+        .type-mid{background:rgba(245,158,11,.12);color:var(--warn);}
+        .type-unit{background:rgba(16,185,129,.12);color:var(--ok);}
+        .type-final{background:rgba(239,68,68,.12);color:var(--err);}
+        .ex-meta{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:#64748b;margin-top:8px;}
+        .ex-meta span{display:flex;align-items:center;gap:4px;}
+        .ex-pub{margin-top:12px;display:flex;justify-content:flex-end;gap:8px;}
+        .btn-sm{padding:5px 12px;font-size:.78rem;border-radius:8px;}
+        .btn-green{background:var(--ok);color:white;}
+        .btn-grey{background:#94a3b8;color:white;}
+        .btn-warn{background:var(--warn);color:white;}
+        @media(max-width:768px){.ex-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-clock"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="ex-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-calendar-alt"></i> Exam Schedule</h1>
+            <button class="btn btn-primary" onclick="toggleForm()"><i class="fas fa-plus"></i> Add Exam</button>
+        </div>
+        <div class="card" id="createForm" style="display:none;">
+            <h3 style="margin-top:0;color:#1e293b;">Schedule New Exam</h3>
+            <form method="post">{% csrf_token %}
+                <div class="form-row">
+                    <div><label>Title</label><input type="text" name="title" placeholder="e.g. Mid Term 2025" required style="max-width:260px;"></div>
+                    <div><label>Subject</label>
+                        <select name="subject" required>
+                            <option value="">Select Subject</option>
+                            {% for s in teacher_subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div><label>Class</label>
+                        <select name="target_class" required>
+                            <option value="">Select Class</option>
+                            {% for c in available_classes %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div><label>Section</label><input type="text" name="target_section" placeholder="A/B" maxlength="5" style="max-width:80px;"></div>
+                </div>
+                <div class="form-row">
+                    <div><label>Exam Type</label>
+                        <select name="exam_type">
+                            <option value="unit">Unit Test</option><option value="mid" selected>Mid Term</option>
+                            <option value="terminal">Terminal</option><option value="final">Final</option>
+                            <option value="practical">Practical</option>
+                        </select>
+                    </div>
+                    <div><label>Date</label><input type="date" name="exam_date" required></div>
+                    <div><label>Start</label><input type="time" name="start_time" required></div>
+                    <div><label>End</label><input type="time" name="end_time"></div>
+                </div>
+                <div class="form-row">
+                    <div><label>Total Marks</label><input type="number" name="total_marks" value="100" min="1" style="max-width:100px;"></div>
+                    <div><label>Passing Marks</label><input type="number" name="passing_marks" value="40" min="0" style="max-width:100px;"></div>
+                    <div><label>Venue</label><input type="text" name="venue" placeholder="Room/Hall/Online" style="max-width:260px;"></div>
+                    <div style="margin-left:auto;">
+                        <input type="checkbox" id="pub" name="is_published" checked>
+                        <label for="pub" style="font-size:.82rem;color:#374151;">Publish</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create</button>
+                </div>
+            </form>
+        </div>
+        <div class="ex-grid">
+        {% for ex in exams %}
+        <div class="ex-card">
+            <div class="ex-top">
+                <h3>{{ ex.title }}</h3>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <span class="ex-type {% if ex.exam_type=='terminal' %}type-terminal{% elif ex.exam_type=='mid' %}type-mid{% elif ex.exam_type=='unit' %}type-unit{% elif ex.exam_type=='final' %}type-final{% else %}type-terminal{% endif %}">
+                        {{ ex.get_exam_type_display }}
+                    </span>
+                    {% if ex.is_published %}<span class="ex-type type-unit" style="background:rgba(16,185,129,.12);color:#10b981;">Published</span>{% endif %}
+                </div>
+            </div>
+            <div class="ex-meta">
+                <span><i class="fas fa-book" style="color:var(--pri);"></i> {{ ex.subject.name }}</span>
+                <span><i class="fas fa-users" style="color:var(--ok);"></i> {{ ex.target_class }} {{ ex.target_section }}</span>
+                <span><i class="fas fa-calendar-day" style="color:var(--warn);"></i> {{ ex.exam_date|date:"d M Y" }}</span>
+                <span><i class="fas fa-clock" style="color:var(--err);"></i> {{ ex.start_time|time:"g:i a" }}{% if ex.end_time %} – {{ ex.end_time|time:"g:i a" }}{% endif %}</span>
+                <span><i class="fas fa-star" style="color:var(--warn);"></i> {{ ex.total_marks }} marks (Pass: {{ ex.passing_marks }})</span>
+            </div>
+            {% if ex.venue %}
+            <div class="ex-meta"><i class="fas fa-map-marker-alt" style="color:var(--err);"></i> {{ ex.venue }}</div>
+            {% endif %}
+            {% if ex.instructions %}
+            <div style="margin-top:8px;padding:10px 14px;background:#f1f5f9;border-radius:8px;font-size:.82rem;color:#64748b;line-height:1.5;">{{ ex.instructions|truncatewords:30 }}</div>
+            {% endif %}
+            <div class="ex-pub">
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="pub_id" value="{{ ex.id }}">
+                    <button type="submit" class="btn btn-sm {% if ex.is_published %}btn-grey{% else %}btn-green{% endif %}"
+                            style="{% if ex.is_published %}background:#94a3b8;{% else %}background:#10b981;{% endif %}color:white;">
+                        {% if ex.is_published %}<i class="fas fa-eye-slash"></i> Unpublish{% else %}<i class="fas fa-eye"></i> Publish{% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:60px;color:#94a3b8;background:white;border-radius:16px;">
+            <i class="fas fa-calendar-times" style="font-size:2.5rem;margin-bottom:16px;display:block;"></i>
+            <p>No exams scheduled yet.</p>
+        </div>
+        {% endfor %}
+        </div>
+    </div>
+    <script>
+        function toggleForm() {
+            var f = document.getElementById('createForm');
+            f.style.display = f.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>

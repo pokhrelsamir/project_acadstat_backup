@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ plan.room_name }} — Seating Plan — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .sv-wrapper{max-width:1100px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .back-link{display:inline-flex;align-items:center;gap:8px;color:var(--pri);text-decoration:none;font-weight:600;margin-bottom:20px;}
+        .info-card{background:white;border-radius:14px;padding:18px 22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:20px;display:flex;gap:20px;flex-wrap:wrap;}
+        .info-card strong{display:block;font-size:.82rem;color:#94a3b8;margin-bottom:2px;}
+        .info-card span{font-size:.88rem;color:#374151;font-weight:600;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-ghost{background:#f1f5f9;color:#64748b;}
+        .seat-grid{margin-top:20px;}
+        .seat-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+        .row-letter{width:40px;font-size:.85rem;font-weight:800;color:var(--pri);text-align:center;flex-shrink:0;text-transform:uppercase;}
+        .seat-cell{min-width:66px;height:72px;border:2px solid #e2e8f0;border-radius:10px;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.72rem;color:#374151;transition:.2s;text-align:center;}
+        .seat-cell:hover{border-color:var(--pri);background:#ede9fe;transform:scale(1.05);}
+        .seat-cell.occupied{background:#d1fae5;border-color:#a7f3d0;color:#065f46;}
+        .seat-cell.empty{border-style:dashed;background:#fafafa;color:#e2e8f0;}
+        .seat-label{font-weight:800;font-size:.82rem;letter-spacing:.05em;}
+        .seat-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px;margin-top:3px;}
+        .seat-roll{font-size:.62rem;font-weight:700;}
+        @media(max-width:768px){.sv-wrapper{padding:10px;}.seat-cell{min-width:50px;height:58px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-chair"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/seating-plans/"><i class="fas fa-list"></i> All Plans</a>
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="sv-wrapper">
+        <a href="{% url 'core:seating_plan_list' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Plans</a>
+
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;
+             color:{% if m.tags=='error' %}#dc2626{% else %}#16a34a{% endif %};
+             background:{% if m.tags=='error' %}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+
+        <div class="info-card">
+            <div><strong>Exam</strong><span>{{ plan.exam.title }} — {{ plan.exam.subject.name }}</span></div>
+            <div><strong>Class</strong><span>{{ plan.exam.target_class }}{% if plan.exam.target_section %} {{ plan.exam.target_section }}{% endif %}</span></div>
+            <div><strong>Date</strong><span>{{ plan.exam.exam_date|date:'M d, Y' }}</span></div>
+            <div><strong>Room</strong><span>{{ plan.room_name }}</span></div>
+            <div><strong>Students Arranged</strong><span>{{ allocations.count }}</span></div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+                <a href="{% url 'core:seating_plan_hall_ticket' plan.id 0 %}" class="btn btn-ghost" style="display:none;">Preview Ticket</a>
+            </div>
+
+            <div class="seat-grid">
+                <!-- Build seat rows grouped by row number -->
+                {% with rows=allocations|dictsort:"row" %}
+                {% regroup rows by row as row_groups %}
+                {% for row_group in row_groups %}
+                <div class="seat-row">
+                    <span class="row-letter">{{ forloop.counter }}</span>
+                    {% for seat in row_group.list %}
+                    <div class="seat-cell {% if seat.student %}occupied{% else %}empty{% endif %}"
+                         style="position:relative;" id="seat-{{ seat.id }}">
+                        <span class="seat-label">{{ seat.seat_number }}</span>
+                        {% if seat.student %}
+                        <span class="seat-name">{{ seat.student.name }}</span>
+                        <span class="seat-roll">{{ seat.student.roll_number }}</span>
+                        {% unless plan.teacher.is_admin %}{% endunless %}
+                        {% endif %}
+                        <input type="hidden" name="seat_{{ seat.id }}" value="{{ seat.seat_number }}">
+                        <input type="hidden" name="row_{{ seat.id }}" value="{{ seat.row }}">
+                        <input type="hidden" name="col_{{ seat.id }}" value="{{ seat.column }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+                {% endwith %}
+                <!-- Remaining empty positions -->
+                {% with allocated=allocations.count %}
+                <div class="seat-row">
+                    <span class="row-letter" style="opacity:.3;">…</span>
+                    <span style="font-size:.78rem;color:#94a3b8;margin-left:10px;">{{ plan.room_capacity|add:"-"|add:allocated|add:" vacant" if plan.room_capacity > allocated }} seats available</span>
+                </div>
+                {% endwith %}
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attempts — {{ exam.title }} — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .ea-wrapper{max-width:1100px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .back-link{display:inline-flex;align-items:center;gap:8px;color:var(--pri);text-decoration:none;font-weight:600;margin-bottom:20px;}
+        .card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .hardware-table{width:100%;border-collapse:collapse;}
+        .hardware-table th{padding:12px 16px;background:#f8fafc;border-bottom:2px solid #e2e8f0;font-size:.78rem;color:#64748b;font-weight:700;text-align:left;white-space:nowrap;}
+        .hardware-table td{padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:.85rem;color:#374151;}
+        .hardware-table tr:hover td{background:#f8fafc;}
+        .sta-active{background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;}
+        .sta-timedout{background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;}
+        .sub-card{background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:8px;border:1px solid #e2e8f0;}
+        .sub-card .q-text{font-size:.85rem;font-weight:600;color:#1e293b;margin-bottom:8px;}
+        .sub-card .ans-row{display:flex;gap:20px;font-size:.82rem;color:#64748b;flex-wrap:wrap;}
+        .sub-card .ans-row b{color:#374151;}
+        .ans-opt input{padding:5px 8px;border:2px solid #e2e8f0;border-radius:6px;font-size:.82rem;width:60px;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-sm{padding:5px 12px;font-size:.78rem;}
+        .toggled{display:none;}
+        @media(max-width:768px){.ea-wrapper{padding:15px;}.hardware-table{font-size:.78rem;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-graduation-cap"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/online-exams/"><i class="fas fa-tachometer-alt"></i> Exams</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="ea-wrapper">
+        <a href="{% url 'core:online_exam_detail' exam.id %}" class="back-link"><i class="fas fa-arrow-left"></i> {{ exam.title }}</a>
+
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;
+             color:{% if m.tags=='error' %}#dc2626{% else %}#16a34a{% endif %};
+             background:{% if m.tags=='error' %}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+
+        <div class="card">
+            <h2><i class="fas fa-users" style="color:var(--pri);"></i> Submissions ({{ attempts.count }})</h2>
+            <table class="hardware-table">
+                <thead>
+                    <tr><th>Student</th><th>Attempt #</th><th>Score</th><th>Status</th><th>Started</th><th>Submitted</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                {% for att in attempts %}
+                <tr>
+                    <td style="font-weight:600;">{{ att.student.name }}</td>
+                    <td>{{ att.attempt_number }}</td>
+                    <td>{{ att.score_obtained|default:'—' }} / {{ exam.total_marks }}</td>
+                    <td><span class="sta-{{ att.status|lower }}">{{ att.get_status_display }}</span></td>
+                    <td>{{ att.started_at|date:'M d, H:i' }}</td>
+                    <td>{{ att.submitted_at|date:'M d, H:i'|default:'—' }}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="toggleSubs({{ att.id }})">
+                            <i class="fas fa-eye"></i> Details
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="7" style="padding:0;background:#f8fafc;">
+                        <div class="toggled" id="subs-{{ att.id }}">
+                            {% for ans in att.manual_answers %}
+                            <div class="sub-card">
+                                <div class="q-text">{{ ans.question.question_text }}</div>
+                                <div class="ans-row">
+                                    <span>Student Answer: <b>{{ ans.answer_text|default:ans.selected_option|default:'—' }}</b></span>
+                                    <span>Correct: <b>{{ ans.question.correct_answer }}</b></span>
+                                </div>
+                                <form method="post" style="display:flex;gap:8px;align-items:center;margin-top:8px;" action="{% url 'core:online_exam_submissions' exam.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="grade">
+                                    <input type="hidden" name="answer_id" value="{{ ans.id }}">
+                                    <label style="font-size:.78rem;font-weight:600;color:#64748b;">Award:</label>
+                                    <input type="number" name="marks_awarded" value="{{ ans.marks_awarded|default:0 }}" min="0" style="width:70px;padding:6px 8px;border:2px solid #e2e8f0;border-radius:6px;font-size:.82rem;">
+                                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-check"></i> Save</button>
+                                </form>
+                            </div>
+                            {% empty %}
+                            <p style="padding:20px;font-size:.82rem;color:#94a3b8;">No short/long answers requiring manual grading.</p>
+                            {% endfor %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% if not attempts %}
+            <p style="text-align:center;color:#94a3b8;font-size:.88rem;padding:24px;">No attempts yet. Share the exam with students.</p>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        function toggleSubs(id){
+            const el=document.getElementById('subs-'+id);
+            el.classList.toggle('toggled');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head><title>Weekly Attendance Report</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #8b5cf6; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="margin:0;">&#128197; Weekly Attendance Report</h1>
+    <p style="margin:5px 0 0;">{{ student_name }} — {{ week_range }}</p>
+  </div>
+  <div style="background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none;">
+    <div style="display: flex; justify-content: space-around; text-align: center; margin: 15px 0;">
+      <div>
+        <p style="margin:0; font-size:1.5em; font-weight:bold; color:#10b981;">{{ total_present }}</p>
+        <p style="margin:0; color:#6b7280;">Present</p>
+      </div>
+      <div>
+        <p style="margin:0; font-size:1.5em; font-weight:bold; color:#ef4444;">{{ total_absent }}</p>
+        <p style="margin:0; color:#6b7280;">Absent</p>
+      </div>
+      <div>
+        <p style="margin:0; font-size:1.5em; font-weight:bold; color:#f59e0b;">{{ total_late }}</p>
+        <p style="margin:0; color:#6b7280;">Late</p>
+      </div>
+      <div>
+        <p style="margin:0; font-size:1.5em; font-weight:bold; color:#6366f1;">{{ attendance_percentage }}%</p>
+        <p style="margin:0; color:#6b7280;">Percentage</p>
+      </div>
+    </div>
+    <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+      <thead>
+        <tr style="background:#ede9fe; color:#4c1d95;">
+          <th style="padding:10px; text-align:left;">Date</th>
+          <th style="padding:10px; text-align:left;">Subject</th>
+          <th style="padding:10px; text-align:center;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rec in records %}
+        <tr style="background:{% if forloop.counter|divisibleby:2 %}#f9fafb{% else %}#fff{% endif %};">
+          <td style="padding:10px; border-bottom:1px solid #e5e7eb;">{{ rec.date }}</td>
+          <td style="padding:10px; border-bottom:1px solid #e5e7eb;">{{ rec.subject|default:"General" }}</td>
+          <td style="padding:10px; border-bottom:1px solid #e5e7eb; text-align:center;">
+            {% if rec.status == 'present' %}<span style="color:#10b981;font-weight:bold;">&#10003; Present</span>
+            {% elif rec.status == 'absent' %}<span style="color:#ef4444;font-weight:bold;">&#10007; Absent</span>
+            {% elif rec.status == 'late' %}<span style="color:#f59e0b;font-weight:bold;">&#9201; Late</span>
+            {% else %}<span style="color:#6b7280;">{{ rec.status }}</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

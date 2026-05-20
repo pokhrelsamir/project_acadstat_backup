@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Messages — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function(){ const saved=localStorage.getItem('theme'); const t=saved||'dark'; document.documentElement.setAttribute('data-theme',t); })();
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-envelope"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/teacher-messages/inbox/" {% if not unread_count or unread_count == 0 %}{% else %}<i class="fas fa-circle" style="font-size:.5rem;color:#ef4444;vertical-align:super;"></i>{% endif %}><i class="fas fa-inbox"></i> Inbox</a>
+            <a href="/teacher-messages/" class="active"><i class="fas fa-paper-plane"></i> Send</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <button class="theme-toggle" id="themeToggle"><svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/></svg><svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+        </div>
+    </nav>
+    <div style="max-width:800px;margin:0 auto;padding:2rem;">
+        <div class="page-wrapper">
+            <a href="/teacher-dashboard/" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+            <div class="form-card">
+                <div class="form-header">
+                    <h2><i class="fas fa-paper-plane"></i> Send Message to Student</h2>
+                    <p>Send an in-app message to one of your assigned students</p>
+                </div>
+
+                {% if messages %}
+                {% for message in messages %}
+                <div class="success-message"><i class="fas fa-check-circle"></i> {{ message }}</div>
+                {% endfor %}
+                {% endif %}
+
+                <form method="POST" class="modern-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Student</label>
+                        <select name="recipient_student" required class="form-control" style="padding:12px 16px;border-radius:10px;">
+                            <option value="">Select Student</option>
+                            {% for s in students %}
+                            <option value="{{ s.id }}">{{ s.name }} — {{ s.student_class }} {{ s.section }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-heading"></i> Subject</label>
+                        <input type="text" name="subject" placeholder="Subject line (optional)" class="form-control" style="padding:12px 16px;border-radius:10px;">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-comment-dots"></i> Message</label>
+                        <textarea name="user" required rows="6" placeholder="Type your message here..." class="form-control" style="padding:12px 16px;border-radius:10px;resize:vertical;"></textarea>
+                    </div>
+                    <button type="submit" name="action" value="send" class="btn-primary" style="width:100%;padding:1rem;">
+                        <i class="fas fa-paper-plane"></i> Send Message
+                    </button>
+                </form>
+
+                <div style="margin-top:2rem;padding:1.5rem;background:rgba(102,126,234,.08);border-radius:12px;border:1px solid rgba(102,126,234,.2);">
+                    <h4 style="margin:0 0 .5rem;color:var(--text-primary);"><i class="fas fa-inbox"></i> Recent Sent Messages</h4>
+                    {% if sent_messages %}
+                    <div style="display:flex;flex-direction:column;gap:.75rem;">
+                        {% for msg in sent_messages %}
+                        <div style="background:var(--bg-card);border-radius:10px;padding:1rem;border:1px solid var(--border-color);">
+                            <div style="font-weight:600;color:var(--text-primary);font-size:.9rem;">{{ msg.subject|default:"(No Subject)" }}</div>
+                            <div style="color:var(--text-secondary);font-size:.85rem;margin:.3rem 0;">
+                                To: {{ msg.recipient_student.name }} &nbsp;|&nbsp; {{ msg.created_at|date:"jS M, Y h:i A" }}
+                            </div>
+                            <div style="color:var(--text-primary);font-size:.875rem;margin-top:.5rem;">{{ msg.user|truncatewords:20 }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p style="color:var(--text-secondary);margin:0;">No messages sent yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('themeToggle').addEventListener('click',function(){
+            const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+            document.documentElement.setAttribute('data-theme',t);
+            localStorage.setItem('theme',t);
+        });
+    </script>
+</body>
+</html>

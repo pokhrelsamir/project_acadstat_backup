@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Hall Tickets — {{ plan.room_name }} — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;}
+        body{background:#f8fafc;font-family:'Segoe UI',sans-serif;padding:40px 20px;}
+        .page-hdr{text-align:center;margin-bottom:30px;}
+        .page-hdr h1{margin:0 0 6px;font-size:1.6rem;color:#1e293b;}
+        .page-hdr p{margin:0;font-size:.88rem;color:#64748b;}
+        .tickets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:30px;}
+        .ticket{background:white;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.1);border:2px solid #e2e8f0;overflow:hidden;page-break-inside:avoid;}
+        .ticket-hdr{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;padding:14px 18px;text-align:center;}
+        .ticket-hdr h3{margin:0;font-size:.95rem;}
+        .ticket-body{padding:18px;}
+        .t-info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:.78rem;}
+        .t-info-row:last-child{border-bottom:none;}
+        .t-lbl{font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;}
+        .t-val{font-weight:700;color:#374151;}
+        .t-student{font-size:1rem;color:var(--pri);font-weight:800;text-align:center;padding:12px 0 8px;}
+        .t-seat-big{text-align:center;font-size:1.6rem;font-weight:900;color:var(--ok);padding:10px 0;border-top:2px dashed #e2e8f0;border-bottom:2px dashed #e2e8f0;margin:10px 0;}
+        .t-sig{margin-top:12px;display:flex;justify-content:space-between;font-size:.7rem;color:#94a3b8;}
+        @media print{
+            body{background:white;}
+            .page-hdr{display:none;}
+            .tickets-grid{display:block;}
+            .ticket{margin-bottom:20px;box-shadow:none;}
+        }
+    </style>
+</head>
+<body>
+    <div class="page-hdr">
+        <h1><i class="fas fa-chair"></i> Bulk Hall Tickets</h1>
+        <p>{{ plan.room_name }} — {{ plan.exam.title }} — {{ plan.exam.subject.name }} ({{ plan.room_capacity }} capacity)</p>
+    </div>
+
+    <div class="tickets-grid">
+        {% for alloc in allocations %}
+        <div class="ticket">
+            <div class="ticket-hdr">
+                <h3>{{ plan.exam.title }}</h3>
+            </div>
+            <div class="ticket-body">
+                <div class="t-info-row">
+                    <span>Subject</span>
+                    <span class="t-val">{{ plan.exam.subject.name }}</span>
+                </div>
+                <div class="t-info-row">
+                    <span>Exam Date</span>
+                    <span class="t-val">{{ plan.exam.exam_date|date:"e d M Y" }}</span>
+                </div>
+                <div class="t-info-row">
+                    <span>Time</span>
+                    <span class="t-val">{{ plan.exam.start_time|default:"TBD" }}</span>
+                </div>
+                <div class="t-info-row">
+                    <span>Duration</span>
+                    <span class="t-val">{{ plan.exam.duration_minutes }} min</span>
+                </div>
+                <div class="t-info-row">
+                    <span>Class</span>
+                    <span class="t-val">{{ plan.exam.target_class }}{% if plan.exam.target_section %} {{ plan.exam.target_section }}{% endif %}</span>
+                </div>
+                <div class="t-info-row">
+                    <span>Total Marks</span>
+                    <span class="t-val">{{ plan.exam.total_marks }}</span>
+                </div>
+                <div class="t-student">
+                    {{ alloc.student.name }}
+                    <span style="font-size:.75rem;color:#64748b;display:block;font-weight:600;">Roll: {{ alloc.student.roll_number }}</span>
+                </div>
+                <div class="t-seat-big">
+                    🪑 Seat {{ alloc.seat_number }}
+                </div>
+                <div class="t-sig">
+                    <span>Candidate Sig: __________________</span>
+                    <span>Invigilator Sig: __________________</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="text-align:center;margin-top:40px;padding:20px;">
+        <button onclick="window.print()" style="background:var(--pri);color:white;border:none;padding:12px 30px;border-radius:10px;font-size:.95rem;cursor:pointer;">
+            <i class="fas fa-print"></i> Print All Tickets
+        </button>
+    </div>
+</body>
+</html>

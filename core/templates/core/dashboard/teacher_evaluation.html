@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Evaluation — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--bg:#f8fafc;}
+        .ev-wrapper{max-width:700px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{margin-bottom:24px;}
+        .page-header a{color:var(--pri);text-decoration:none;font-size:.9rem;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .form-card{background:white;border-radius:20px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.1);border:1px solid #e2e8f0;}
+        .form-card h2{margin-top:0;color:#1e293b;margin-bottom:6px;}
+        .stu-tag{font-size:.88rem;color:#64748b;margin-bottom:24px;}
+        .range-group{margin-bottom:24px;}
+        .range-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+        .range-label{font-size:.88rem;font-weight:600;color:#374151;}
+        .range-val{font-size:1.3rem;font-weight:700;color:var(--pri);min-width:40px;text-align:right;}
+        input[type=range]{width:100%;accent-color:var(--pri);height:8px;cursor:pointer;}
+        .form-group{margin-bottom:16px;}
+        .form-group label{font-size:.85rem;font-weight:600;color:#374151;display:block;margin-bottom:6px;}
+        .form-group textarea{width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:.95rem;font-family:inherit;min-height:100px;}
+        .total-card{background:linear-gradient(135deg,var(--pri),#764ba2);border-radius:16px;padding:24px;text-align:center;color:white;margin:20px 0;}
+        .total-card .lbl{font-size:.85rem;opacity:.8;margin-bottom:4px;}
+        .total-card .val{font-size:2.2rem;font-weight:700;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:12px 24px;border-radius:10px;border:none;font-size:.9rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;}
+        .btn-primary{background:var(--ok);color:white;}
+        .btn-primary:hover{background:#059669;}
+        @media(max-width:768px){.ev-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-star"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-performance/"><i class="fas fa-chart-line"></i> Performance</a>
+            <a href="/smart-dashboard/"><i class="fas fa-brain"></i> Analytics</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="ev-wrapper">
+        <div class="page-header">
+            <a href="/teacher-performance/"><i class="fas fa-arrow-left"></i> Teacher Performance</a>
+            <h1><i class="fas fa-star"></i> Evaluate Teacher</h1>
+        </div>
+        <div class="form-card">
+            <h2>{{ teacher.get_full_name }}</h2>
+            <div class="stu-tag">Department: {{ teacher.department.name|default:"—" }} · Subjects: {{ teacher.subjects.count }}</div>
+            <form method="post">{% csrf_token %}
+                <div class="range-group">
+                    <div class="range-head"><span class="range-label">📚 Subject Knowledge</span><span class="range-val" id="rp">{{ form.subject_performance.value|default:80 }}</span></div>
+                    {{ form.subject_performance }}
+                </div>
+                <div class="range-group">
+                    <div class="range-head"><span class="range-label">⏰ Punctuality</span><span class="range-val" id="rpp">{{ form.punctuality.value|default:80 }}</span></div>
+                    {{ form.punctuality }}
+                </div>
+                <div class="range-group">
+                    <div class="range-head"><span class="range-label">💬 Communication</span><span class="range-val" id="rpc">{{ form.communication.value|default:80 }}</span></div>
+                    {{ form.communication }}
+                </div>
+                <div class="range-group">
+                    <div class="range-head"><span class="range-label">😊 Student Satisfaction</span><span class="range-val" id="rps">{{ form.student_satisfaction.value|default:80 }}</span></div>
+                    {{ form.student_satisfaction }}
+                </div>
+                <div class="form-group">
+                    <label>Comments (optional)</label>
+                    {{ form.comments }}
+                </div>
+                <div class="total-card">
+                    <div class="lbl">Predicted Overall Score</div>
+                    <div class="val" id="overallPreview">{{ (form.subject_performance.value|default:80 + form.punctuality.value|default:80 + form.communication.value|default:80 + form.student_satisfaction.value|default:80) / 4 | floatformat:1 }}</div>
+                </div>
+                <div style="display:flex;gap:12px;">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Submit Evaluation</button>
+                    <a href="/teacher-performance/" class="btn" style="background:#f1f5f9;color:#374151;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.querySelectorAll('input[type="range"]').forEach(inp=>{
+            inp.addEventListener('input',function(){
+                document.getElementById(this.id.substring(0,3)).textContent=this.value;
+                updatePreview();
+            });
+        });
+        function updatePreview(){
+            const sp=+(document.querySelector('[name=subject_performance]').value||80);
+            const pp=+(document.querySelector('[name=punctuality]').value||80);
+            const pc=+(document.querySelector('[name=communication]').value||80);
+            const ps=+(document.querySelector('[name=student_satisfaction]').value||80);
+            document.getElementById('overallPreview').textContent=((sp+pp+pc+ps)/4).toFixed(1);
+        }
+    </script>
+</body>
+</html>

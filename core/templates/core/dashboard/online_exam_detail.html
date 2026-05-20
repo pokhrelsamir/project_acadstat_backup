@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ exam.title }} — Exam Detail — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .ed-wrapper{max-width:900px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .back-link{display:inline-flex;align-items:center;gap:8px;color:var(--pri);text-decoration:none;font-weight:600;margin-bottom:20px;}
+        .card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .card h2{margin:0 0 18px 0;font-size:1.05rem;color:#1e293b;}
+        .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+        .form-group{margin-bottom:8px;}
+        .form-group label{font-size:.80rem;font-weight:700;color:#64748b;display:block;margin-bottom:3px;}
+        .form-group input,.form-group select{width:100%;padding:9px 10px;border:2px solid #e2e8f0;border-radius:7px;font-size:.86rem;font-family:inherit;}
+        .meta-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;font-size:.80rem;color:#64748b;}
+        .meta-row span{background:#f1f5f9;padding:5px 12px;border-radius:8px;}
+        .meta-row i{color:var(--pri);margin-right:4px;}
+        .s-pub{display:inline-block;padding:3px 14px;border-radius:20px;font-size:.72rem;font-weight:700;background:#d1fae5;color:#065f46;}
+        .s-draft{background:#f1f5f9;color:#64748b;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-sm{padding:5px 12px;font-size:.78rem;}
+        .btn-ghost{background:#f1f5f9;color:#64748b;}
+        . btn-err-outline{background:transparent;border:2px solid #ef4444;color:#ef4444;}
+        .q-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px;}
+        .q-item .q-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+        .q-num{width:28px;height:28px;border-radius:8px;background:var(--pri);color:white;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;}
+        .q-badge{padding:2px 8px;border-radius:6px;font-size:.7rem;background:#e0e7ff;color:#3730a3;font-weight:700;}
+        .q-marks{margin-left:auto;font-size:.78rem;color:#64748b;}
+        .q-text{font-size:.9rem;color:#1e293b;margin-bottom:8px;font-weight:600;}
+        .q-options{font-size:.82rem;color:#64748b;}
+        .q-correct{font-size:.78rem;font-weight:700;color:var(--ok);}
+        .add-q-form{display:grid;grid-template-columns:1fr 100px 70px;gap:10px;margin-top:12px;align-items:end;}
+        .add-q-form input,.add-q-form select{padding:9px;border:2px solid #e2e8f0;border-radius:8px;font-size:.86rem;}
+        .add-q-form .full{grid-column:1/-1;}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-graduation-cap"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/online-exams/"><i class="fas fa-tachometer-alt"></i> Exams</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="ed-wrapper">
+        <a href="{% url 'core:online_exam_list' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Exams</a>
+
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;
+             color:{% if m.tags=='error' %}#dc2626{% else %}#16a34a{% endif %};
+             background:{% if m.tags=='error' %}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+
+        <!-- Settings -->
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_exam">
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+                    <div>
+                        <h2 style="margin:0;">{{ exam.title }}</h2>
+                        <span class="s-pub" style="margin-top:6px;">{{ exam.get_status_display }}</span>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Settings</button>
+                    </div>
+                </div>
+                <div class="meta-row">
+                    <span><i class="fas fa-book"></i> {{ exam.subject.name }}</span>
+                    <span><i class="fas fa-users"></i> {{ exam.target_class }}{% if exam.target_section %} {{ exam.target_section }}{% endif %}</span>
+                    <span><i class="fas fa-star"></i> Total: {{ exam.total_marks }} | Pass: {{ exam.passing_marks }}</span>
+                    <span><i class="fas fa-clock"></i> {{ exam.duration_minutes }} min</span>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Exam Title</label>
+                        <input type="text" name="title" value="{{ exam.title }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Marks</label>
+                        <input type="number" name="total_marks" value="{{ exam.total_marks }}" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Passing Marks</label>
+                        <input type="number" name="passing_marks" value="{{ exam.passing_marks }}" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" name="duration_minutes" value="{{ exam.duration_minutes }}" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Attempts</label>
+                        <input type="number" name="max_attempts" value="{{ exam.max_attempts }}" min="1">
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:6px;">
+                        <input type="checkbox" name="is_published" id="pub" {% if exam.is_published %}checked{% endif %}>
+                        <label for="pub" style="font-size:.82rem;">Published</label>
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:6px;">
+                        <input type="checkbox" name="shuffle_questions" id="shuf" {% if exam.shuffle_questions %}checked{% endif %}>
+                        <label for="shuf" style="font-size:.82rem;">Shuffle Questions</label>
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:6px;">
+                        <input type="checkbox" name="show_result_immediately" id="sim" {% if exam.show_result_immediately %}checked{% endif %}>
+                        <label for="sim" style="font-size:.82rem;">Show Results Immediately</label>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date/Time</label>
+                        <input type="datetime-local" name="start_at" value="{{ exam.start_at|date:'Y-m-d\\TH:i' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date/Time</label>
+                        <input type="datetime-local" name="end_at" value="{{ exam.end_at|date:'Y-m-d\\TH:i' }}">
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Questions Card -->
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+                <h2 style="margin:0;"><i class="fas fa-question-circle" style="color:var(--pri);"></i> Questions ({{ questions.count }})</h2>
+            </div>
+
+            <!-- Add Question Form -->
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_question">
+                <div class="add-q-form">
+                    <input type="text" name="question_text" required placeholder="Enter question..." style="grid-column:1/3;">
+                    <select name="question_type">
+                        {% for key, label in QUESTION_TYPE_CHOICES %}
+                        <option value="{{ key }}" {% if key == 'MCQ' %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="number" name="question_marks" value="1" min="1" placeholder="Marks">
+                    <input type="text" name="question_correct" placeholder="Correct ans">
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add</button>
+                </div>
+            </form>
+
+            {% for q in questions %}
+            <div class="q-item">
+                <div class="q-header">
+                    <span class="q-num">{{ q.order }}</span>
+                    <span class="q-text">{{ q.question_text }}</span>
+                    <span class="q-marks"><i class="fas fa-star" style="color:var(--warn);"></i> {{ q.marks }} mark{{ q.marks|pluralize }}</span>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:.78rem;color:#64748b;">
+                    <span class="q-badge">{{ q.get_question_type_display }}</span>
+                    <span class="q-correct"><i class="fas fa-check-circle"></i> Correct: {{ q.correct_answer }}</span>
+                </div>
+                {% if q.options %}
+                <div class="q-options">
+                    {% for opt in q.options %}<span style="margin-right:12px;"><b>{{ opt.label }}.</b> {{ opt.text }}</span>{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p style="text-align:center;color:#94a3b8;font-size:.88rem;padding:24px;">No questions yet. Add questions using the form above.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Delete Question Form -->
+        <form method="post" style="margin-bottom:20px;" onsubmit="return confirm('Delete this question?')">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_question">
+            <input type="hidden" name="question_id" id="delQid" value="">
+            <button type="submit" class="btn btn-err-outline" style="border-radius:10px;font-size:.82rem;">
+                <i class="fas fa-trash"></i> Delete Selected Question
+            </button>
+        </form>
+    </div>
+
+    <script>
+        document.querySelectorAll('.q-item').forEach(item=>{
+            item.style.cursor='pointer';
+            item.addEventListener('click',function(){
+                document.querySelectorAll('.q-item').forEach(el=>el.style.outline='none');
+                this.style.outline='2px solid var(--pri)';
+                document.getElementById('delQid').value=this.dataset.qid;
+            });
+        });
+    </script>
+</body>
+</html>

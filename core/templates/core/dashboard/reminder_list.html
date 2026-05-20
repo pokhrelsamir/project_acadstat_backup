@@ -1,0 +1,62 @@
+{% extends 'core/dashboard/dashboard.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>🔔 Reminders</h1>
+    <p class="dashboard-subtitle">Scheduled notifications and recurring reminders for your students</p>
+  </div>
+
+  <div style="margin-bottom:24px;">
+    <a href="{% url 'core:reminder_create' %}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Create Reminder
+    </a>
+  </div>
+
+  {% if reminders %}
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    {% for r in reminders %}
+    <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;
+                padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div style="min-width:44px;height:44px;border-radius:10px;display:flex;align-items:center;
+                  justify-content:center;font-size:1.3rem;
+                  {% if r.reminder_type == 'attendance' %}background:#dbeafe;{% elif r.reminder_type == 'fee' %}background:#fee2e2;{% elif r.reminder_type == 'assignment_deadline' %}background:#fef3c7;{% else %}background:#f1f5f9;{% endif %}">
+        {% if r.reminder_type == 'attendance' %}📅
+        {% elif r.reminder_type == 'fee' %}💰
+        {% elif r.reminder_type == 'assignment_deadline' %}📚
+        {% elif r.reminder_type == 'meeting' %}👥
+        {% elif r.reminder_type == 'study' %}📖
+        {% else %}🔔{% endif %}
+      </div>
+
+      <div style="flex:1;min-width:200px;">
+        <div style="font-weight:700;color:var(--text-primary);margin-bottom:4px;">{{ r.title }}</div>
+        <p style="margin:0;font-size:.88rem;color:var(--text-secondary);">{{ r.message }}</p>
+        <p style="margin:4px 0 0;font-size:.8rem;color:#94a3b8;">
+          {% if r.student %}{{ r.student.name }} &bull;{% endif %}
+          {{ r.get_reminder_type_display }}
+          &bull; 📅 {{ r.scheduled_for|date:"M d, Y h:i A" }}
+          {% if r.recurrence != 'none' %}
+            &bull; 🔄 Every {{ r.recurrence }}
+          {% endif %}
+        </p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+        <span style="font-size:.8rem;padding:4px 10px;border-radius:99px;
+          {% if r.is_sent %}background:#dcfce7;color:#166534;{% else %}background:#fef9c3;color:#854d0e;{% endif %}">
+          {% if r.is_sent %}Sent{% else %}Pending{% endif %}
+        </span>
+        {% if r.sent_at %}<span style="font-size:.75rem;color:#94a3b8;">{{ r.sent_at|date:"M d h:i A" }}</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:48px;color:var(--text-secondary);">
+    <i class="fas fa-bell-slash" style="font-size:3rem;margin-bottom:16px;display:block;opacity:.4;"></i>
+    <p>No reminders yet. Click "Create Reminder" to get started.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

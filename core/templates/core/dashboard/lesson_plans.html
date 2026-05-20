@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson Plans — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .lp-wrapper{max-width:1200px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-sm{padding:6px 12px;font-size:.82rem;}
+        .btn-danger{background:#ef4444;color:white;}
+        .btn-success{background:var(--ok);color:white;}
+        .btn-warn{background:var(--warn);color:white;}
+        .filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px;background:white;border-radius:12px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .filter-row select,.filter-row input{padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;}
+        .plan-card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:14px;display:flex;gap:16px;align-items:flex-start;transition:.3s;}
+        .plan-card:hover{border-color:var(--pri);}
+        .status-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:.75rem;font-weight:700;text-transform:uppercase;}
+        .s-planned{background:#fef3c7;color:#92400e;}
+        .s-completed{background:#d1fae5;color:#065f46;}
+        .s-skipped{background:#fee2e2;color:#991b1b;}
+        .method-badge{padding:2px 8px;border-radius:8px;background:#e0e7ff;color:#3730a3;font-size:.72rem;font-weight:600;}
+        .plan-main{flex:1;}
+        .plan-main h3{margin:0 0 6px 0;font-size:1rem;color:#1e293b;}
+        .plan-meta{font-size:.82rem;color:#64748b;}
+        .plan-meta span{margin-right:14px;}
+        .plan-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+        .subject-pill{display:inline-block;padding:3px 10px;border-radius:20px;background:#e0e7ff;color:#3730a3;font-size:.75rem;font-weight:600;}
+        @media(max-width:768px){.lp-wrapper{padding:15px;}.plan-card{flex-direction:column;}.plan-actions{flex-direction:row;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-book"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/add-marks/"><i class="fas fa-plus-circle"></i> Add Marks</a>
+            <a href="/course-materials/"><i class="fas fa-folder-open"></i> Materials</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="lp-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-calendar-alt"></i> Lesson Plans</h1>
+            <button class="btn btn-primary" onclick="openModal()"><i class="fas fa-plus"></i> Add Plan</button>
+        </div>
+
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;
+             color:{% if m.tags=='error' %}#dc2626{% else %}#16a34a{% endif %};
+             background:{% if m.tags=='error' %}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+
+        <div class="filter-row">
+            <label style="font-size:.85rem;font-weight:600;color:#64748b;">Filter:</label>
+            <select name="subject" onchange="location.href='?subject='+this.value+'{% if selected_class %}&class_section={{ selected_class }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}'">
+                <option value="">All Subjects</option>
+                {% for subj in teacher_subjects %}
+                <option value="{{ subj.id }}" {% if selected_subject == subj.id|stringformat:"s" %}selected{% endif %}>{{ subj.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="class_section" placeholder="Class/Section (e.g. 10A)"
+                   value="{{ selected_class }}"
+                   onchange="location.href='?subject={{ selected_subject }}&class_section='+this.value+'{% if selected_status %}&status={{ selected_status }}{% endif %}'"
+                   style="max-width:160px;">
+            <select name="status" onchange="location.href='?subject={{ selected_subject }}&class_section={{ selected_class or '' }}&status='+this.value">
+                <option value="">All Statuses</option>
+                {% for key, label in LESSON_STATUS_CHOICES %}
+                <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% for plan in plans %}
+        <div class="plan-card">
+            <div style="flex-shrink:0;">
+                <div style="width:44px;height:44px;border-radius:12px;background:rgba(102,126,234,.12);display:flex;align-items:center;justify-content:center;color:var(--pri);font-size:1.2rem;">
+                    <i class="fas fa-book-open"></i>
+                </div>
+            </div>
+            <div class="plan-main">
+                <h3>{{ plan.title }} <span class="subject-pill">{{ plan.subject.name }}</span></h3>
+                <div class="plan-meta">
+                    <span><i class="fas fa-users"></i> {{ plan.class_section }}</span>
+                    <span><i class="fas fa-file-alt"></i> {{ plan.chapter_topic }}</span>
+                    <span><i class="fas fa-calendar"></i> {{ plan.planned_date|date:"M d, Y" }}</span>
+                    <span><i class="fas fa-clock"></i> {{ plan.duration_minutes }} min</span>
+                    <span class="method-badge">
+                        {% for key, label in TEACHING_METHOD_CHOICES %}{% if key == plan.teaching_method %}{{ label }}{% endif %}{% endfor %}
+                    </span>
+                    <span class="status-badge s-{{ plan.status }}">
+                        {% for key, label in LESSON_STATUS_CHOICES %}{% if key == plan.status %}{{ label }}{% endif %}{% endfor %}
+                    </span>
+                </div>
+                {% if plan.description %}<p style="margin:8px 0 0;font-size:.85rem;color:#64748b;">{{ plan.description }}</p>{% endif %}
+                {% if plan.remarks %}<p style="margin:4px 0 0;font-size:.82rem;color:#ef4444;"><i class="fas fa-info-circle"></i> {{ plan.remarks }}</p>{% endif %}
+            </div>
+            <div class="plan-actions">
+                <a href="{% url 'core:lesson_plan_detail' plan_id=plan.id %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:60px 20px;color:#94a3b8;">
+            <i class="fas fa-clipboard-list" style="font-size:3rem;margin-bottom:12px;display:block;"></i>
+            <p>No lesson plans found. Click <b>Add Plan</b> to create one.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Add Plan Modal -->
+    <div id="planModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:16px;padding:28px;width:90%;max-width:640px;max-height:90vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h2 style="margin:0;font-size:1.3rem;color:#1e293b;"><i class="fas fa-plus-circle" style="color:var(--pri);"></i> Add Lesson Plan</h2>
+                <button onclick="closeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;">&times;</button>
+            </div>
+            <form method="post" action="{% url 'core:lesson_plans' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div>
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Subject *</label>
+                        <select name="subject" required style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;">
+                            <option value="">Select Subject</option>
+                            {% for subj in teacher_subjects %}<option value="{{ subj.id }}">{{ subj.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Class/Section *</label>
+                        <input type="text" name="class_section" required placeholder="e.g. 10A, XI-B" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;">
+                    </div>
+                    <div style="grid-column:span 2;">
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Title *</label>
+                        <input type="text" name="title" required placeholder="Lesson plan title" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;">
+                    </div>
+                    <div style="grid-column:span 2;">
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Chapter / Topic *</label>
+                        <input type="text" name="chapter_topic" required placeholder="Chapter or topic name" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;">
+                    </div>
+                    <div>
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Planned Date *</label>
+                        <input type="date" name="planned_date" required style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;">
+                    </div>
+                    <div>
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Duration (min)</label>
+                        <input type="number" name="duration_minutes" value="45" min="1" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;">
+                    </div>
+                    <div>
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Teaching Method</label>
+                        <select name="teaching_method" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;">
+                            {% for key, label in TEACHING_METHOD_CHOICES %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Status</label>
+                        <select name="status" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;">
+                            {% for key, label in LESSON_STATUS_CHOICES %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div style="grid-column:span 2;">
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Learning Outcomes</label>
+                        <textarea name="learning_outcomes" rows="3" placeholder="What should students be able to do after this lesson?" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;"></textarea>
+                    </div>
+                    <div style="grid-column:span 2;">
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Resources Used</label>
+                        <textarea name="resources_used" rows="2" placeholder="Whiteboard, projector, lab, etc." style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;"></textarea>
+                    </div>
+                    <div style="grid-column:span 2;">
+                        <label style="font-size:.82rem;font-weight:700;color:#64748b;">Remarks</label>
+                        <textarea name="remarks" rows="2" placeholder="Any additional notes..." style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;margin-top:4px;"></textarea>
+                    </div>
+                </div>
+                <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;">
+                    <button type="button" onclick="closeModal()" style="padding:10px 20px;border-radius:10px;background:white;border:2px solid #e2e8f0;cursor:pointer;font-weight:600;">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Plan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal(){document.getElementById('planModal').style.display='flex';}
+        function closeModal(){document.getElementById('planModal').style.display='none';}
+        document.getElementById('planModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+    </script>
+</body>
+</html>

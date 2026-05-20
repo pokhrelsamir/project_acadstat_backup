@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Message — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function(){ const saved=localStorage.getItem('theme'); const t=saved||'dark'; document.documentElement.setAttribute('data-theme',t); })();
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-user-shield"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/student-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/parent-message/" class="active"><i class="fas fa-user-shield"></i> Parent Portal</a>
+            <a href="/profile/"><i class="fas fa-user"></i> Profile</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div style="max-width:700px;margin:0 auto;padding:2rem;">
+        <a href="/student-dashboard/" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+        <div class="form-card">
+            <div class="form-header">
+                <h2><i class="fas fa-user-shield"></i> Parent / Guardian Portal</h2>
+                <p>View and contact your parent / guardian information</p>
+            </div>
+            {% if parent %}
+            <div style="background:rgba(16,185,129,.1);border:1px solid #10b981;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+                <h4 style="color:#10b981;margin-bottom:.75rem;"><i class="fas fa-check-circle"></i> Parent Info on File</h4>
+                <div style="display:grid;gap:.5rem;">
+                    <div><strong>Father:</strong> {{ parent.father_name|default:"–" }}</div>
+                    <div><strong>Mother:</strong> {{ parent.mother_name|default:"–" }}</div>
+                    <div><strong>Guardian:</strong> {{ parent.guardian_name|default:"–" }}</div>
+                    <div><strong>Phone:</strong> {{ parent.phone|default:"–" }}</div>
+                    <div><strong>Email:</strong> {{ parent.email|default:"–" }}</div>
+                    <div><strong>Address:</strong> {{ parent.address|default:"–" }}</div>
+                    <div><strong>Relation:</strong> {{ parent.relation }}</div>
+                </div>
+            </div>
+            {% elif parent is not none %}
+            <div style="background:rgba(245,158,11,.1);border:1px solid #f59e0b;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+                <h4 style="color:#f59e0b;margin-bottom:.5rem;"><i class="fas fa-exclamation-triangle"></i> Parent Info Not Set</h4>
+                <p style="color:var(--text-secondary);font-size:.9rem;">No parent information has been saved for you yet. Contact the admin to add it.</p>
+            </div>
+            {% endif %}
+
+            <div style="background:rgba(102,126,234,.08);border:1px solid rgba(102,126,234,.2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+                <h4 style="color:#667eea;margin-bottom:.5rem;"><i class="fas fa-info-circle"></i> About Parent Portal</h4>
+                <p style="color:var(--text-secondary);font-size:.9rem;">
+                    The parent portal allows your parent/guardian to contact the school regarding your academic progress,
+                    attendance, or general enquiries. Your parent's contact details are securely stored in the system.
+                    Contact the school administration to update or correct parent information.
+                </p>
+            </div>
+
+            <div style="text-align:center;">
+                <a href="/manage-parent/{{ student.id }}/" class="btn-primary" style="text-decoration:none;display:inline-block;padding:1rem 2rem;border-radius:12px;">
+                    <i class="fas fa-edit"></i> {% if parent %}Edit Parent Info{% else %}Add Parent Info{% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

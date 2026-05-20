@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <title>Marks List - Academic System</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Theme detection script - Default to dark theme -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const theme = savedTheme || 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <h2 class="logo">🎓 AcadStat</h2>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            {% if user.is_authenticated %}
+                <a href="/dashboard/">Dashboard</a>
+                <a href="/logout/">Logout</a>
+            {% else %}
+                <a href="/login/">Login</a>
+            {% endif %}
+            
+            <!-- Theme Toggle Button -->
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+                <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="container">
+        {% block content %}
+<div class="marks-page-wrapper">
+    <!-- Header Section -->
+    <div class="marks-header">
+        <div class="header-left">
+            <a href="/dashboard/" class="back-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back
+            </a>
+            <div class="title-section">
+                <h2>Student Marks</h2>
+                <p>View and manage all student marks records</p>
+            </div>
+        </div>
+        <a href="/add-marks/" class="add-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add New Marks
+        </a>
+        <a href="/mark-sheet/" class="add-btn" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); margin-right: 10px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            View Mark Sheet
+        </a>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="filter-section">
+        <div class="search-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Search by student name or subject...">
+        </div>
+        <div class="filter-stats">
+            <span class="stat-badge">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span id="totalRecords">{{ result.count }}</span> Records
+            </span>
+        </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="table-container">
+        <table class="marks-table" id="marksTable">
+            <thead>
+                <tr>
+                    <th>
+                        <span class="th-content">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            Student
+                        </span>
+                    </th>
+                    <th>
+                        <span class="th-content">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            </svg>
+                            Subject
+                        </span>
+                    </th>
+                    <th>
+                        <span class="th-content">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            Terminal
+                        </span>
+                    </th>
+                    <th>
+                        <span class="th-content">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                            Marks
+                        </span>
+                    </th>
+                    <th>
+                        <span class="th-content">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            Percentage
+                        </span>
+                    </th>
+                    <th>
+                        <span class="th-content">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            Date
+                        </span>
+                    </th>
+                    <th>
+                        <span class="th-content">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"/>
+                                <circle cx="19" cy="12" r="1"/>
+                                <circle cx="5" cy="12" r="1"/>
+                            </svg>
+                            Actions
+                        </span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mark in result %}
+                <tr data-id="{{ mark.id }}">
+                    <td class="student-cell">
+                        <div class="student-info">
+                            <div class="student-avatar">
+                                {{ mark.student.name|make_list|first|upper }}
+                            </div>
+                            <div>
+                                <span class="student-name">{{ mark.student.name }}</span>
+                                <span class="student-roll">{{ mark.student.roll_number|default:"N/A" }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="subject-badge">{{ mark.subject.name }}</span>
+                    </td>
+                    <td>
+                        <span class="terminal-badge {{ mark.terminal }}-badge">{{ mark.terminal }}</span>
+                    </td>
+                    <td>
+                        <div class="marks-cell">
+                            <span class="marks-obtained">{{ mark.marks_obtained }}</span>
+                            <span class="marks-divider">/</span>
+                            <span class="marks-total">{{ mark.total_marks }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% widthratio mark.marks_obtained mark.total_marks 100 as percentage %}
+                        <div class="percentage-badge {% if percentage >= 60 %}pass{% else %}fail{% endif %}">
+                            {{ percentage }}%
+                        </div>
+                    </td>
+                    <td class="date-cell">
+                        {{ mark.created_at|date:"M d, Y" }}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn marksheet-btn" onclick="openTerminalModal({{ mark.student.id }}, '{{ mark.student.name }}')" title="Generate Mark Sheet 📑" style="background: #dcfce7; color: #16a34a; border: none; display: flex; align-items: center; justify-content: center;">
+                                📑
+                            </button>
+                            <button class="action-btn edit-btn" onclick="editMarks({{ mark.id }})" title="Edit 📝" style="background: #dbeafe; color: #2563eb;">
+                                📝
+                            </button>
+                            <button class="action-btn delete-btn" onclick="deleteMarks({{ mark.id }})" title="Delete ❌" style="background: #fee2e2; color: #dc2626;">
+                                ❌
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="empty-state">
+                        <div class="empty-content">
+                            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            <h3>No marks records found</h3>
+                            <p>Start by adding marks for students</p>
+                            <a href="/add-marks/" class="empty-btn">Add Marks</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Marks</h3>
+            <button class="modal-close" onclick="closeModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <form id="editForm" class="edit-form">
+            {% csrf_token %}
+            <input type="hidden" id="editMarkId" name="mark_id">
+            
+            <div class="form-group">
+                <label>Student</label>
+                <input type="text" id="editStudent" readonly class="readonly-input">
+            </div>
+            
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="editSubject" readonly class="readonly-input">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editMarksObtained">Marks Obtained</label>
+                    <input type="number" id="editMarksObtained" name="marks_obtained" step="0.01" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editTotalMarks">Total Marks</label>
+                    <input type="number" id="editTotalMarks" name="total_marks" step="0.01" min="1" required>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-save">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-content delete-modal">
+        <div class="delete-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+        </div>
+        <h3>Delete Marks Record?</h3>
+        <p>This action cannot be undone. The student's marks will be permanently removed.</p>
+        <input type="hidden" id="deleteMarkId">
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+            <button type="button" class="btn-delete" onclick="confirmDelete()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Terminal Selection Modal for Mark Sheet -->
+<div class="modal-overlay" id="terminalModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3>Select Terminal for Mark Sheet</h3>
+            <button class="modal-close" onclick="closeTerminalModal()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div style="padding: 10px 0;">
+            <p id="terminalModalStudent" style="color: #64748b; margin-bottom: 15px; font-size: 0.95rem;"></p>
+            <div class="terminal-select-grid">
+                <div class="terminal-select-option">
+                    <input type="radio" id="select_1st" name="terminal_select" value="1st">
+                    <label for="select_1st">
+                        <span class="emoji">📝</span>
+                        <span class="label-text">1st Terminal</span>
+                    </label>
+                </div>
+                <div class="terminal-select-option">
+                    <input type="radio" id="select_2nd" name="terminal_select" value="2nd">
+                    <label for="select_2nd">
+                        <span class="emoji">📋</span>
+                        <span class="label-text">2nd Terminal</span>
+                    </label>
+                </div>
+                <div class="terminal-select-option">
+                    <input type="radio" id="select_3rd" name="terminal_select" value="3rd">
+                    <label for="select_3rd">
+                        <span class="emoji">📊</span>
+                        <span class="label-text">3rd Terminal</span>
+                    </label>
+                </div>
+                <div class="terminal-select-option">
+                    <input type="radio" id="select_Final" name="terminal_select" value="Final">
+                    <label for="select_Final">
+                        <span class="emoji">🏆</span>
+                        <span class="label-text">Final</span>
+                    </label>
+                </div>
+            </div>
+            <input type="hidden" id="terminalModalStudentId">
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button type="button" class="btn-cancel" onclick="closeTerminalModal()">Cancel</button>
+                <button type="button" class="btn-save" onclick="generateMarkSheet()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    Generate Mark Sheet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .marks-page-wrapper {
+        max-width: 1100px;
+        margin: 30px auto;
+        padding: 0 20px;
+    }
+
+    .marks-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 10px 16px;
+        border-radius: 10px;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+    }
+
+    .back-btn:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+
+    .title-section h2 {
+        color: #1e293b;
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+
+    .title-section p {
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+
+    .add-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .add-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .filter-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: white;
+        padding: 12px 18px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .search-box svg {
+        color: #94a3b8;
+    }
+
+    .search-box input {
+        border: none;
+        outline: none;
+        flex: 1;
+        font-size: 0.95rem;
+        color: #334155;
+    }
+
+    .search-box input::placeholder {
+        color: #94a3b8;
+    }
+
+    .filter-stats {
+        display: flex;
+        gap: 15px;
+    }
+
+    .stat-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: white;
+        border-radius: 10px;
+        color: #64748b;
+        font-weight: 500;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    .marks-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .marks-table th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 18px 20px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .th-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .marks-table tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+    }
+
+    .marks-table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .marks-table td {
+        padding: 18px 20px;
+        color: #334155;
+    }
+
+    .student-cell .student-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .student-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .student-name {
+        display: block;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .student-roll {
+        display: block;
+        font-size: 0.85rem;
+        color: #94a3b8;
+    }
+
+    .subject-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        background: #f1f5f9;
+        border-radius: 8px;
+        font-weight: 500;
+        color: #475569;
+        font-size: 0.9rem;
+    }
+    
+    .terminal-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-align: center;
+        min-width: 85px;
+        font-size: 0.85rem;
+    }
+    
+    .terminal-badge.1st-badge {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+    }
+    
+    .terminal-badge.2nd-badge {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        color: #1e40af;
+    }
+    
+    .terminal-badge.3rd-badge {
+        background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+        color: #5b21b6;
+    }
+    
+    .terminal-badge.Final-badge {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+    }
+
+    .marks-cell {
+        font-weight: 600;
+    }
+
+    .marks-obtained {
+        font-size: 1.1rem;
+        color: #1e293b;
+    }
+
+    .marks-divider {
+        color: #cbd5e1;
+        margin: 0 4px;
+    }
+
+    .marks-total {
+        color: #94a3b8;
+    }
+
+    .percentage-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .percentage-badge.pass {
+        background: #d1fae5;
+        color: #059669;
+    }
+
+    .percentage-badge.fail {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .date-cell {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 38px;
+        height: 38px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+    }
+
+    .edit-btn {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
+
+    .edit-btn:hover {
+        background: #0284c7;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .marksheet-btn {
+        width: 38px;
+        height: 38px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .marksheet-btn:hover {
+        background: #16a34a !important;
+        color: white !important;
+        transform: scale(1.1);
+    }
+
+    .delete-btn {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .delete-btn:hover {
+        background: #dc2626;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .empty-state {
+        padding: 60px 20px !important;
+    }
+
+    .empty-content {
+        text-align: center;
+    }
+
+    .empty-content h3 {
+        color: #475569;
+        margin: 20px 0 10px;
+    }
+
+    .empty-content p {
+        color: #94a3b8;
+        margin-bottom: 20px;
+    }
+
+    .empty-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .empty-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+    }
+
+    .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        width: 90%;
+        max-width: 500px;
+        transform: scale(0.9);
+        transition: all 0.3s;
+    }
+
+    .modal-overlay.active .modal-content {
+        transform: scale(1);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .modal-header h3 {
+        font-size: 1.5rem;
+        color: #1e293b;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #94a3b8;
+        padding: 5px;
+        transition: color 0.3s;
+    }
+
+    .modal-close:hover {
+        color: #475569;
+    }
+
+    .edit-form .form-group {
+        margin-bottom: 20px;
+    }
+
+    .edit-form label {
+        display: block;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+
+    .edit-form input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+
+    .edit-form input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .readonly-input {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .edit-form .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 25px;
+    }
+
+    .modal-actions button {
+        flex: 1;
+        padding: 14px;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s;
+        border: none;
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .btn-cancel:hover {
+        background: #e2e8f0;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-delete {
+        background: #dc2626;
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background: #b91c1c;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+    }
+
+    /* Delete Modal */
+    .delete-modal {
+        text-align: center;
+        max-width: 400px;
+    }
+
+    .delete-icon {
+        width: 80px;
+        height: 80px;
+        background: #fee2e2;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+
+    .delete-modal h3 {
+        font-size: 1.4rem;
+        color: #1e293b;
+        margin-bottom: 10px;
+    }
+
+    .delete-modal p {
+        color: #64748b;
+        margin-bottom: 25px;
+    }
+
+    /* Terminal Selection Modal Styles */
+    .terminal-select-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .terminal-select-option {
+        position: relative;
+    }
+
+    .terminal-select-option input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .terminal-select-option label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px 10px;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 0;
+        font-weight: 500;
+    }
+
+    .terminal-select-option label:hover {
+        border-color: #16a34a;
+        transform: translateY(-2px);
+    }
+
+    .terminal-select-option input:checked + label {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        border-color: transparent;
+        color: white;
+        box-shadow: 0 4px 15px rgba(22, 163, 74, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .terminal-select-option .emoji {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+
+    .terminal-select-option .label-text {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    /* Ensure action buttons stay on same line */
+    .action-buttons {
+        display: flex !important;
+        gap: 8px !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .action-btn {
+        flex-shrink: 0 !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .marks-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .filter-section {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .search-box {
+            max-width: none;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        .marks-table {
+            min-width: 700px;
+        }
+    }
+    
+    /* Toast Notifications */
+    .toast-notification {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 24px;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s ease;
+        z-index: 9999;
+        font-weight: 500;
+    }
+    
+    .toast-notification.show {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    
+    .toast-notification.toast-success {
+        border-left: 4px solid #10b981;
+    }
+    
+    .toast-notification.toast-success svg {
+        color: #10b981;
+    }
+    
+    .toast-notification.toast-error {
+        border-left: 4px solid #ef4444;
+    }
+    
+    .toast-notification.toast-error svg {
+        color: #ef4444;
+    }
+</style>
+
+<script>
+    // Store marks data for JavaScript access
+    const marksData = {
+        {% for mark in result %}
+        {{ mark.id }}: {
+            student: "{{ mark.student.name }}",
+            subject: "{{ mark.subject.name }}",
+            marks_obtained: {{ mark.marks_obtained }},
+            total_marks: {{ mark.total_marks }},
+            student_id: {{ mark.student.id }},
+            subject_id: {{ mark.subject.id }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#marksTable tbody tr');
+        
+        rows.forEach(row => {
+            const studentName = row.querySelector('.student-name')?.textContent.toLowerCase() || '';
+            const subject = row.querySelector('.subject-badge')?.textContent.toLowerCase() || '';
+            
+            if (studentName.includes(searchTerm) || subject.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // Edit Marks
+    function editMarks(id) {
+        const mark = marksData[id];
+        if (!mark) return;
+        
+        document.getElementById('editMarkId').value = id;
+        document.getElementById('editStudent').value = mark.student;
+        document.getElementById('editSubject').value = mark.subject;
+        document.getElementById('editMarksObtained').value = mark.marks_obtained;
+        document.getElementById('editTotalMarks').value = mark.total_marks;
+        
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    // Close Modal
+    function closeModal() {
+        document.getElementById('editModal').classList.remove('active');
+    }
+
+    // Delete Marks
+    function deleteMarks(id) {
+        document.getElementById('deleteMarkId').value = id;
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+    }
+
+    // Terminal Selection Modal for Mark Sheet
+    function openTerminalModal(studentId, studentName) {
+        document.getElementById('terminalModalStudentId').value = studentId;
+        document.getElementById('terminalModalStudent').textContent = 'Generate mark sheet for: ' + studentName;
+        
+        // Reset radio button selection
+        const radios = document.getElementsByName('terminal_select');
+        for (let radio of radios) {
+            radio.checked = false;
+        }
+        
+        document.getElementById('terminalModal').classList.add('active');
+    }
+
+    function closeTerminalModal() {
+        document.getElementById('terminalModal').classList.remove('active');
+    }
+
+    function generateMarkSheet() {
+        const studentId = document.getElementById('terminalModalStudentId').value;
+        const terminal = document.querySelector('input[name="terminal_select"]:checked');
+        
+        if (!terminal) {
+            alert('Please select a terminal');
+            return;
+        }
+        
+        window.location.href = `/mark-sheet/${studentId}/${terminal.value}/`;
+    }
+
+    // Confirm Delete
+    function confirmDelete() {
+        const id = document.getElementById('deleteMarkId').value;
+        
+        fetch(`/delete-marks/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove row with animation
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(-20px)';
+                    setTimeout(() => {
+                        row.remove();
+                        // Update count
+                        const countEl = document.getElementById('totalRecords');
+                        countEl.textContent = parseInt(countEl.textContent) - 1;
+                    }, 300);
+                }
+                closeDeleteModal();
+                // Show success message
+                showToast(data.message || 'Marks deleted successfully', 'success');
+            } else {
+                showToast(data.message || 'Error deleting record', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error deleting record. Please try again.', 'error');
+        });
+    }
+    
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification toast-${type}`;
+        toast.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                ${type === 'success' ? '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>' : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'}
+            </svg>
+            <span>${message}</span>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // Handle Edit Form Submit
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('editMarkId').value;
+        const marks_obtained = document.getElementById('editMarksObtained').value;
+        const total_marks = document.getElementById('editTotalMarks').value;
+        
+        fetch(`/edit-marks/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                marks_obtained: marks_obtained,
+                total_marks: total_marks
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                // Update the row data
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                    row.querySelector('.marks-obtained').textContent = marks_obtained;
+                    row.querySelector('.marks-total').textContent = total_marks;
+                    
+                    // Update percentage
+                    const percentage = Math.round((marks_obtained / total_marks) * 100);
+                    const percentBadge = row.querySelector('.percentage-badge');
+                    percentBadge.textContent = percentage + '%';
+                    percentBadge.className = 'percentage-badge ' + (percentage >= 60 ? 'pass' : 'fail');
+                }
+                closeModal();
+            } else {
+                alert('Error updating record');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating record');
+        });
+    });
+
+    // Close modals on outside click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+    <!-- Theme Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const html = document.documentElement;
+            
+            // Set initial icon state
+            updateThemeIcon(html.getAttribute('data-theme'));
+            
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+            });
+            
+            function updateThemeIcon(theme) {
+                const sunIcon = themeToggle.querySelector('.sun-icon');
+                const moonIcon = themeToggle.querySelector('.moon-icon');
+                
+                if (theme === 'dark') {
+                    sunIcon.style.display = 'block';
+                    moonIcon.style.display = 'none';
+                } else {
+                    sunIcon.style.display = 'none';
+                    moonIcon.style.display = 'block';
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

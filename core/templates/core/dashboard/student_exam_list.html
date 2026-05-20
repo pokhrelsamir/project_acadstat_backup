@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Exams — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .ex-wrapper{max-width:900px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .section-title{font-size:1.05rem;color:#1e293b;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+        .ex-card{background:white;border-radius:12px;padding:18px 22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:12px;transition:.3s;}
+        .ex-card:hover{border-color:var(--pri);}
+        .ec-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+        .ec-name{font-size:.98rem;font-weight:700;color:#1e293b;margin-bottom:3px;}
+        .ec-sub{font-size:.82rem;color:var(--pri);}
+        .ec-meta{display:flex;gap:8px;margin-top:8px;font-size:.75rem;color:#64748b;}
+        .ec-meta span{background:#f8fafc;padding:3px 8px;border-radius:6px;}
+        .ec-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 12px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap;}
+        .ba-upcoming{background:#dbeafe;color:#1e40af;}
+        .ba-active{background:#d1fae5;color:#065f46;}
+        .ba-done{background:#f1f5f9;color:#64748b;}
+        .empty-state{text-align:center;padding:80px;color:#94a3b8;}
+        .empty-state i{font-size:3rem;margin-bottom:12px;display:block;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-graduation-cap"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/student-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="ex-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-graduation-cap"></i> My Exams</h1>
+        </div>
+
+        {% if upcoming %}
+        <p class="section-title"><i class="fas fa-clock" style="color:var(--warn);"></i> Upcoming</p>
+        {% for exam in upcoming %}
+        <div class="ex-card">
+            <div class="ec-top">
+                <div><div class="ec-name">{{ exam.title }}</div><div class="ec-sub">{{ exam.subject.name }} — {{ exam.target_class }}{% if exam.target_section %} {{ exam.target_section }}{% endif %}</div></div>
+                <span class="ec-badge ba-upcoming"><i class="fas fa-clock"></i> {{ exam.total_marks }} marks</span>
+            </div>
+            <div class="ec-meta">
+                <span><i class="fas fa-hourglass-half"></i> {{ exam.duration_minutes }} min</span>
+                <span><i class="fas fa-flag-checkered"></i> Starts {{ exam.start_at|date:'M d, H:i' }}</span>
+                <span><i class="fas fa-lock-open"></i> {{ exam.max_attempts }} attempt{{ exam.max_attempts|pluralize }} allowed</span>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if active_exams %}
+        <p class="section-title"><i class="fas fa-play-circle" style="color:var(--ok);"></i> In Progress</p>
+        {% for exam in active_exams %}
+        <div class="ex-card">
+            <div class="ec-top">
+                <div><div class="ec-name">{{ exam.title }}</div><div class="ec-sub">{{ exam.subject.name }}</div></div>
+                <span class="ec-badge ba-active"><i class="fas fa-play"></i> In Progress</span>
+            </div>
+            <div class="ec-meta">
+                <span>{{ exam.total_marks }} marks</span>
+                <span>{{ exam.duration_minutes }} min limit</span>
+            </div>
+            <a href="{% url 'core:student_exam_start' exam.id %}" class="btn btn-primary" style="margin-top:10px;"><i class="fas fa-play"></i> Continue Attempt</a>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if completed_exams %}
+        <p class="section-title"><i class="fas fa-check-circle" style="color:var(--ok);"></i> Completed</p>
+        {% for item in completed_exams %}
+        {% with exam=item.exam attempt=item.attempt %}
+        <div class="ex-card">
+            <div class="ec-top">
+                <div><div class="ec-name">{{ exam.title }}</div><div class="ec-sub">{{ exam.subject.name }}</div></div>
+                <span class="ec-badge ba-done"><i class="fas fa-check"></i> {{ attempt.score_obtained|default:'—' }} / {{ exam.total_marks }}</span>
+            </div>
+            <div class="ec-meta">
+                <span><i class="fas fa-calendar"></i> {{ attempt.submitted_at|date:'M d, H:i' }}</span>
+            </div>
+            <a href="{% url 'core:student_exam_result' exam.id %}?attempt={{ attempt.id }}" class="btn btn-primary btn-sm" style="margin-top:10px;">
+                <i class="fas fa-file-alt"></i> View Result
+            </a>
+        </div>
+        {% endwith %}
+        {% endfor %}
+        {% endif %}
+
+        {% if not upcoming and not active_exams and not completed_exams %}
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <p>No exams available for you yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

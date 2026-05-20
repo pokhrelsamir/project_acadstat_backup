@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Fees — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .sf-wrapper{max-width:800px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{margin-bottom:24px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .owed-card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;text-align:center;}
+        .owed-card .label{font-size:.85rem;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
+        .owed-card .amt{font-size:2.5rem;font-weight:700;color:var(--err);margin:8px 0;}
+        .data-card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;}
+        .data-card h3{margin:0 0 16px 0;font-size:1.05rem;color:#1e293b;}
+        .fee-item{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem;}
+        .fee-item:last-child{border-bottom:none;}
+        .fee-left{display:flex;flex-direction:column;gap:2px;}
+        .fee-type{font-weight:600;color:#1e293b;}
+        .fee-date{font-size:.8rem;color:#94a3b8;}
+        .fee-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+        .fee-amt{font-weight:600;color:#374151;}
+        .feepaid{color:var(--ok);font-weight:600;}
+        .feepend{color:var(--warn);font-weight:600;}
+        @media(max-width:768px){.sf-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-user-graduate"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/student-dashboard/"><i class="fas fa-dashboard"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="sf-wrapper">
+        {% if error %}
+            <div style="background:#fef2f2;color:#dc2626;border-radius:12px;padding:20px;text-align:center;font-size:1.1rem;">{{ error }}</div>
+        {% else %}
+        <div class="page-header"><h1><i class="fas fa-wallet"></i> My Fee Records</h1></div>
+        <div class="owed-card">
+            <div class="label">Total Outstanding Balance</div>
+            <div class="amt">Rs. {{ total_owed|floatformat:2 }}</div>
+            <span style="color:{% if total_owed == 0 %}#10b981{% else %}#f59e0b{% endif %};font-size:.9rem;">
+                {% if total_owed == 0 %}🎉 All fees cleared!{% else %}Please clear outstanding balance{% endif %}
+            </span>
+        </div>
+        <div class="data-card">
+            <h3><i class="fas fa-history"></i> Fee History</h3>
+            {% for fee in fees %}
+            <div class="fee-item">
+                <div class="fee-left">
+                    <span class="fee-type">{{ fee.get_fee_type_display }}</span>
+                    <span class="fee-date">Due: {{ fee.due_date }} · Receipt: {{ fee.receipt_number|default:"—" }}</span>
+                </div>
+                <div class="fee-right">
+                    <span class="fee-amt">Rs.{{ fee.amount_paid }} / Rs.{{ fee.amount }}</span>
+                    <span class="{% if fee.status=='paid' %}feepaid{% elif fee.status=='overdue' %}feepend{% else %}feepend{% endif %}">
+                        {% if fee.status=='paid' %}<i class="fas fa-check-circle"></i> Paid{% elif fee.status=='overdue' %}<i class="fas fa-exclamation-circle"></i> Overdue{% elif fee.status=='pending' %}<i class="fas fa-clock"></i> Pending{% else %}{{ fee.get_status_display }}{% endif %}
+                    </span>
+                </div>
+            </div>
+            {% empty %}
+            <p style="text-align:center;color:#94a3b8;padding:30px;">No fee records found.</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

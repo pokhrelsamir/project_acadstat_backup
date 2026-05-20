@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Schedule — Student</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .es-wrapper{max-width:900px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh-70px);}
+        .page-header{margin-bottom:24px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .es-section{margin-bottom:32px;}
+        .section-title{font-size:1.15rem;color:#1e293b;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+        .es-grid{display:grid;gap:14px;}
+        .es-card{background:white;border-radius:16px;padding:20px;box-shadow:0 4px 6px-1px rgba(0,0,0,.1);border:1px solid #e2e8f0;transition:.3s;}
+        .es-card:hover{border-color:var(--pri);}
+        .es-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;}
+        .es-top h3{margin:0;font-size:1rem;color:#1e293b;}
+        .ex-badge{padding:3px 10px;border-radius:12px;font-size:.72rem;font-weight:600;}
+        .ex-terminal{background:rgba(102,126,234,.12);color:var(--pri);}
+        .ex-final{background:rgba(239,68,68,.12);color:var(--err);}
+        .ex-mid{background:rgba(245,158,11,.12);color:var(--warn);}
+        .ex-unit{background:rgba(16,185,129,.12);color:var(--ok);}
+        .es-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:#64748b;margin-top:8px;}
+        .es-meta span{display:flex;align-items:center;gap:4px;}
+        .es-count{text-align:center;margin-top:16px;color:#94a3b8;font-size:.9rem;padding:20px;}
+        @media(max-width:768px){.es-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-user-graduate"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/student-dashboard/"><i class="fas fa-dashboard"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="es-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-calendar-check"></i> My Exam Schedule</h1>
+            <span style="color:#64748b;font-size:.9rem;">Class: {{ student.student_class }}{{ student.section }}</span>
+        </div>
+
+        <div class="es-section">
+            <h2 class="section-title"><i class="fas fa-calendar-week" style="color:var(--ok);"></i> Upcoming Exams ({{ upcoming|length }})</h2>
+            {% if upcoming %}
+            <div class="es-grid">
+            {% for ex in upcoming %}
+            <div class="es-card">
+                <div class="es-top">
+                    <h3>{{ ex.title }}</h3>
+                    <span class="ex-badge {% if ex.exam_type=='terminal' %}ex-terminal{% elif ex.exam_type=='final' %}ex-final{% elif ex.exam_type=='mid' %}ex-mid{% else %}ex-unit{% endif %}">
+                        {{ ex.get_exam_type_display }}
+                    </span>
+                </div>
+                <div class="es-meta">
+                    <span><i class="fas fa-book" style="color:var(--pri);"></i> {{ ex.subject.name }}</span>
+                    <span><i class="fas fa-calendar-day" style="color:var(--err);"></i> {{ ex.exam_date|date:"d M Y" }}</span>
+                    <span><i class="fas fa-clock" style="color:var(--warn);"></i> {{ ex.start_time|time:"g:i a" }}{% if ex.end_time %} – {{ ex.end_time|time:"g:i a" }}{% endif %}</span>
+                    <span><i class="fas fa-star"></i> {{ ex.total_marks }} marks (<span style="color:var(--err);">Pass: {{ ex.passing_marks }}</span>)</span>
+                    {% if ex.venue %}<span><i class="fas fa-map-marker-alt"></i> {{ ex.venue }}</span>{% endif %}
+                </div>
+                {% if ex.instructions %}
+                <div style="margin-top:8px;padding:10px 14px;background:#f1f5f9;border-radius:8px;font-size:.82rem;color:#64748b;line-height:1.5;">{{ ex.instructions|truncatewords:40 }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            </div>
+            {% else %}
+            <div class="es-count">No upcoming exams scheduled.</div>
+            {% endif %}
+        </div>
+
+        {% if past %}
+        <div class="es-section">
+            <h2 class="section-title"><i class="fas fa-history" style="color:#64748b;"></i> Past Exams ({{ past|length }})</h2>
+            <div class="es-grid">
+            {% for ex in past %}
+            <div class="es-card" style="opacity:.8;">
+                <div class="es-top">
+                    <h3 style="color:#94a3b8;">{{ ex.title }}</h3>
+                    <span class="ex-badge" style="background:#e2e8f0;color:#64748b;">Completed</span>
+                </div>
+                <div class="es-meta">
+                    <span><i class="fas fa-book"></i> {{ ex.subject.name }}</span>
+                    <span><i class="fas fa-calendar-day"></i> {{ ex.exam_date|date:"d M Y" }}</span>
+                    <span><i class="fas fa-star"></i> {{ ex.total_marks }} marks</span>
+                </div>
+            </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,114 @@
+{% extends 'core/dashboard/dashboard.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>📚 Question Bank</h1>
+    <p class="dashboard-subtitle">Organise questions by subject, chapter &amp; difficulty</p>
+  </div>
+
+  <div style="margin-bottom:24px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+    <a href="{% url 'core:question_bank_add' %}" class="btn btn-primary">
+      <i class="fas fa-plus"></i> Add Question
+    </a>
+    <a href="{% url 'core:question_bank_import' %}" class="btn btn-secondary">
+      <i class="fas fa-file-upload"></i> Import CSV / JSON
+    </a>
+    <a href="?export=csv{% if filter_subject %}&amp;subject={{ filter_subject }}{% endif %}{% if filter_chapter %}&amp;chapter={{ filter_chapter }}{% endif %}{% if filter_difficulty %}&amp;difficulty={{ filter_difficulty }}{% endif %}{% if filter_type %}&amp;type={{ filter_type }}{% endif %}"
+       class="btn btn-secondary">
+      <i class="fas fa-download"></i> Export CSV
+    </a>
+  </div>
+
+  <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:20px;margin-bottom:24px;">
+    <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+      <div>
+        <label style="display:block;font-size:.85rem;color:var(--text-secondary);margin-bottom:4px;">Subject</label>
+        <select name="subject" class="form-control" style="min-width:160px;">
+          <option value="">All subjects</option>
+          {% for s in subjects %}
+          <option value="{{ s.id }}" {% if filter_subject == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:.85rem;color:var(--text-secondary);margin-bottom:4px;">Chapter</label>
+        <select name="chapter" class="form-control" style="min-width:160px;">
+          <option value="">All chapters</option>
+          {% for c in chapters %}
+          <option value="{{ c }}" {% if filter_chapter == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:.85rem;color:var(--text-secondary);margin-bottom:4px;">Difficulty</label>
+        <select name="difficulty" class="form-control" style="min-width:140px;">
+          <option value="">All</option>
+          {% for val,label in difficulties %}
+          <option value="{{ val }}" {% if filter_difficulty == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:.85rem;color:var(--text-secondary);margin-bottom:4px;">Type</label>
+        <select name="type" class="form-control" style="min-width:140px;">
+          <option value="">All types</option>
+          {% for val,label in qtypes %}
+          <option value="{{ val }}" {% if filter_type == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Filter</button>
+      <a href="{% url 'core:question_bank' %}" class="btn btn-secondary">Reset</a>
+    </form>
+  </div>
+
+  {% if questions %}
+  <table style="width:100%;background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;border-collapse:collapse;overflow:hidden;">
+    <thead>
+      <tr style="background:var(--accent-gradient);color:#fff;">
+        <th style="padding:12px 16px;text-align:left;">Subject</th>
+        <th style="padding:12px 16px;text-align:left;">Type</th>
+        <th style="padding:12px 16px;text-align:left;">Question</th>
+        <th style="padding:12px 16px;text-align:center;">Diff.</th>
+        <th style="padding:12px 16px;text-align:center;">Marks</th>
+        <th style="padding:12px 16px;text-align:left;">Chapter</th>
+        <th style="padding:12px 16px;text-align:center;">Used</th>
+        <th style="padding:12px 16px;text-align:center;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for q in questions %}
+      <tr style="border-top:1px solid var(--card-border);">
+        <td style="padding:10px 16px;">{{ q.subject.code }}</td>
+        <td style="padding:10px 16px;">{{ q.get_question_type_display }}</td>
+        <td style="padding:10px 16px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ q.question_text }}</td>
+        <td style="padding:10px 16px;text-align:center;">
+          <span class="badge
+            {% if q.difficulty == 'easy' %}badge-success{% elif q.difficulty == 'medium' %}badge-warning{% else %}badge-danger{% endif %}">
+            {{ q.get_difficulty_display }}
+          </span>
+        </td>
+        <td style="padding:10px 16px;text-align:center;">{{ q.marks }}</td>
+        <td style="padding:10px 16px;">{{ q.chapter }}</td>
+        <td style="padding:10px 16px;text-align:center;">{{ q.times_used }}</td>
+        <td style="padding:10px 16px;text-align:center;">
+          <a href="{% url 'core:question_bank_edit' q.id %}" class="btn btn-sm btn-secondary">Edit</a>
+          <form method="post" action="{% url 'core:question_bank_delete' q.id %}"
+                style="display:inline;" onsubmit="return confirm('Delete this question?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="text-align:center;padding:40px;color:var(--text-secondary);">
+    <i class="fas fa-inbox" style="font-size:3rem;margin-bottom:16px;display:block;opacity:.4;"></i>
+    <p>No questions found. Add your first question or import from a file.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

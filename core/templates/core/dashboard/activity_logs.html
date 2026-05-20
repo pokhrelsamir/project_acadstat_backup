@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Logs — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--bg:#f8fafc;}
+        .al-wrapper{max-width:1200px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{margin-bottom:24px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .filter-row{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:20px;background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .filter-row label{font-size:.82rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;}
+        .filter-row select,.filter-row input{padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.85rem;}
+        .tbl-card{background:white;border-radius:16px;padding:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;overflow-x:auto;}
+        .data-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+        .data-table th{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;padding:12px;text-align:left;font-weight:600;}
+        .data-table td{padding:10px 8px;border-bottom:1px solid #f1f5f9;color:#374151;}
+        .data-table tr:hover td{background:#f8fafc;}
+        .ac-badge{padding:3px 10px;border-radius:10px;font-size:.78rem;font-weight:600;}
+        .ac-login{background:#dbeafe;color:#1e40af;}
+        .ac-marks{background:#fef3c7;color:#92400e;}
+        .ac-student{background:#d1fae5;color:#065f46;}
+        .ac-misc{background:#f3f4f6;color:#374151;}
+        .meta-preview{max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8;font-size:.82rem;cursor:pointer; }
+        @media(max-width:768px){.al-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-shield-alt"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/smart-dashboard/"><i class="fas fa-brain"></i> Analytics</a>
+            <a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="al-wrapper">
+        <div class="page-header"><h1><i class="fas fa-history"></i> System Activity Logs</h1></div>
+        <form method="get" class="filter-row">
+            <div><label>Action</label>
+                <select name="action">
+                    <option value="">All Actions</option>
+                    {% for val,label in actions %}
+                        <option value="{{ val }}" {% if action_filter == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div><label>User</label><input type="text" name="user" placeholder="Username" value="{{ user_filter }}"></div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+            <a href="/activity-logs/" class="btn" style="background:#f1f5f9;color:#374151;">Reset</a>
+        </form>
+        <div class="tbl-card">
+            <table class="data-table">
+                <thead><tr><th>#</th><th>Timestamp</th><th>User</th><th>Action</th><th>Description</th><th>IP Address</th></tr></thead>
+                <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td style="white-space:nowrap;">{{ log.timestamp|date:"M d, Y H:i" }}</td>
+                    <td>{{ log.user.username|default:"Deleted user" }}</td>
+                    <td>
+                        {% if log.action in 'login logout' %}<span class="ac-badge ac-login">{{ log.get_action_display }}</span>
+                        {% elif log.action in 'add_marks edit_marks delete_marks bulk_upload publish_result' %}<span class="ac-badge ac-marks">{{ log.get_action_display }}</span>
+                        {% elif log.action in 'add_student edit_student delete_student promote_student' %}<span class="ac-badge ac-student">{{ log.get_action_display }}</span>
+                        {% else %}<span class="ac-badge ac-misc">{{ log.get_action_display }}</span>{% endif %}
+                    </td>
+                    <td><div class="meta-preview" title="{{ log.description|default:'' }}">{{ log.description|default:'—' }}</div></td>
+                    <td style="font-family:monospace;font-size:.82rem;">{{ log.ip_address|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;">No log entries found.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

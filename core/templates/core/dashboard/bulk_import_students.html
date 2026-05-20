@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Import — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--bg:#f8fafc;}
+        .bi-wrapper{max-width:700px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{margin-bottom:24px;}
+        .page-header a{color:var(--pri);text-decoration:none;font-size:.9rem;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .upload-card{background:white;border-radius:20px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.1);border:1px solid #e2e8f0;text-align:center;}
+        .dropzone{border:2px dashed var(--pri);border-radius:16px;padding:50px;margin-bottom:20px;cursor:pointer;transition:.3s;}
+        .dropzone:hover{background:rgba(102,126,234,.04);}
+        .dropzone i{font-size:2.5rem;color:var(--pri);display:block;margin-bottom:12px;}
+        .dropzone p{color:#64748b;margin:4px 0;}
+        .dropzone input[type=file]{margin-top:16px;}
+        .format-card{background:#f8fafc;border-radius:14px;padding:20px;margin-top:20px;text-align:left;}
+        .format-card h4{margin:0 0 12px 0;color:#1e293b;font-size:.95rem;}
+        .format-card code{display:block;background:#1e293b;color:#e2e8f0;padding:14px;border-radius:8px;font-size:.82rem;line-height:1.7;margin-bottom:8px;overflow-x:auto;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:12px 24px;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        a.page-back{color:var(--pri);text-decoration:none;font-size:.88rem;margin-top:16px;display:inline-block;}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-file-excel"></i> AcadStat</h2>
+        <div class="nav-links"><a href="/students-list/"><i class="fas fa-users"></i> Students</a><a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a></div>
+    </nav>
+    <div class="bi-wrapper">
+        <div class="page-header">
+            <a href="/students-list/"><i class="fas fa-arrow-left"></i> Back to Students</a>
+            <h1><i class="fas fa-file-upload"></i> Bulk Import Students</h1>
+        </div>
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;color:{# if m.tags=='error'}#dc2626{% else %}#16a34a{% endif %};background:{# if m.tags=='error'}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+        <div class="upload-card">
+            <div class="dropzone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3 style="color:#1e293b;margin:0;">Upload CSV / Excel File</h3>
+                <p>Students will be automatically created with generated user accounts</p>
+                <form method="post" enctype="multipart/form-data">{% csrf_token %}
+                    <input type="file" name="csv_file" accept=".csv,.xlsx,.xls" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-rocket"></i> Import Students</button>
+            </form>
+        </div>
+        <div class="format-card">
+            <h4><i class="fas fa-file-csv"></i> CSV Format (Required Columns)</h4>
+            <code>name,roll_number,level,student_class,section,email,phone,date_of_birth,gender,blood_group
+Rahul Sharma,R001,school,10,A,rahul@mail.com,9841234567,2005-05-12,M,A+
+Anita KC,R002,school,10,B,anita@mail.com,9849876543,2005-09-20,F,B+
+</code>
+            <p style="font-size:.82rem;color:#64748b;margin-bottom:0;">level: school / college / bachelor &nbsp;|&nbsp; gender: M / F / O &nbsp;|&nbsp; date_of_birth: YYYY-MM-DD</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,154 @@
+{% extends 'core/dashboard/dashboard.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>{% if question %}✏️ Edit Question{% else %}➕ Add Question{% endif %}</h1>
+    <p class="dashboard-subtitle">
+      {% if question %}Update question details below{% else %}Fill in all fields below. MCQ options can be added dynamically.{% endif %}
+    </p>
+  </div>
+
+  <form method="post" id="qb-form" style="max-width:760px;">
+    {% csrf_token %}
+    <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:20px;">
+
+      <div>
+        <label style="display:block;font-weight:600;margin-bottom:6px;">Subject *</label>
+        <select name="subject" required class="form-control">
+          <option value="">Select subject</option>
+          {% for s in subjects %}
+          <option value="{{ s.id }}"
+            {% if question and question.subject.id == s.id %}selected{% endif %}>
+            {{ s.name }} ({{ s.code }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:600;margin-bottom:6px;">Question Text *</label>
+        <textarea name="question_text" rows="3" required class="form-control"
+                  placeholder="Type the question here...">{% if question %}{{ question.question_text }}{% endif %}</textarea>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;">Type *</label>
+          <select name="question_type" id="qt-select" required class="form-control"
+                  onchange="toggleOptions()">
+            {% for val,label in qtypes %}
+            <option value="{{ val }}"
+              {% if question and question.question_type == val %}selected{% endif %}>
+              {{ label }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;">Difficulty *</label>
+          <select name="difficulty" required class="form-control">
+            {% for val,label in difficulties %}
+            <option value="{{ val }}"
+              {% if question and question.difficulty == val %}selected{% elif not question and val == 'medium' %}selected{% endif %}>
+              {{ label }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;">Marks</label>
+          <input type="number" name="marks" value="{% if question %}{{ question.marks }}{% else %}1{% endif %}"
+                 min="1" required class="form-control" />
+        </div>
+      </div>
+
+      <div id="options-wrapper" style="display:none;">
+        <label style="display:block;font-weight:600;margin-bottom:6px;">Options</label>
+        <div id="options-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <button type="button" class="btn btn-secondary" id="add-opt-btn" onclick="addOption()">
+          <i class="fas fa-plus"></i> Add Option
+        </button>
+        <input type="hidden" name="options_json" id="options-json"
+               value='{{ options_json|safe }}' />
+      </div>
+
+      <div>
+        <label style="display:block;font-weight:600;margin-bottom:6px;">Correct Answer *</label>
+        <input type="text" name="correct_answer" required class="form-control"
+               placeholder="e.g. A, Paris, True, Apple"
+               value="{% if question %}{{ question.correct_answer }}{% endif %}" />
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;">Chapter</label>
+          <input type="text" name="chapter" class="form-control"
+                 placeholder="e.g. Chapter 1: Atoms"
+                 value="{% if question %}{{ question.chapter }}{% endif %}" />
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;">Tags</label>
+          <input type="text" name="tags" class="form-control"
+                 placeholder="Comma-separated"
+                 value="{% if question %}{{ question.tags }}{% endif %}" />
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> {% if question %}Update{% else %}Save Question{% endif %}
+        </button>
+        <a href="{% url 'core:question_bank' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+let optCounter = 0;
+const initialOpts = JSON.parse(document.getElementById("options-json").value || "[]");
+
+function toggleOptions() {
+  const qt = document.getElementById("qt-select").value;
+  const wrapper = document.getElementById("options-wrapper");
+  wrapper.style.display = (qt === "mcq" || qt === "true_false") ? "block" : "none";
+}
+
+function addOption(key, text) {
+  const list = document.getElementById("options-list");
+  const row = document.createElement("div");
+  row.style.cssText = "display:flex;gap:8px;align-items:center;";
+  row.innerHTML = `
+    <input type="text" placeholder="Key (e.g. A)" class="form-control opt-key" style="max-width:70px;"
+           value="${key || String.fromCharCode(65 + optCounter)}" />
+    <input type="text" placeholder="Option text" class="form-control opt-text"
+           value="${text || ""}" />
+    <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove();syncOptions()">
+      <i class="fas fa-trash"></i>
+    </button>`;
+  list.appendChild(row);
+  optCounter++;
+  syncOptions();
+}
+
+function syncOptions() {
+  const rows = document.querySelectorAll("#options-list > div");
+  const data = [];
+  rows.forEach(row => {
+    const k = row.querySelector(".opt-key").value.trim();
+    const t = row.querySelector(".opt-text").value.trim();
+    if (k && t) data.push({ key: k, text: t });
+  });
+  document.getElementById("options-json").value = JSON.stringify(data);
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  toggleOptions();
+  // Load existing options
+  (JSON.parse(document.getElementById("options-json").value || "[]") || []).forEach(o => {
+    addOption(o.key, o.text);
+  });
+});
+</script>
+{% endblock %}

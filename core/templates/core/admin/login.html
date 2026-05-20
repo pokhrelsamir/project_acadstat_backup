@@ -1,0 +1,52 @@
+{% extends "admin/login.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+
+<script>
+    (function() {
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+    })();
+</script>
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+<style>
+
+    body {
+        background: var(--primary-gradient) !important;
+    }
+    
+    [data-theme="dark"] body {
+        background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%) !important;
+    }
+    
+    .login #container {
+        background: var(--admin-content-bg) !important;
+        box-shadow: var(--shadow-lg) !important;
+    }
+    
+    .login #site-name {
+        color: var(--text-primary) !important;
+    }
+    
+    .login-form label {
+        color: var(--text-secondary) !important;
+    }
+    
+    .login input[type="text"],
+    .login input[type="password"] {
+        background: var(--card-bg) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    .login input[type="text"]:focus,
+    .login input[type="password"]:focus {
+        background: var(--card-bg) !important;
+        border-color: var(--primary-color) !important;
+    }
+</style>
+{% endblock %}

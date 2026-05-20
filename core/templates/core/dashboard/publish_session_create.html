@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Publish Session — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-plus-circle"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/publish-sessions/"><i class="fas fa-list"></i> Sessions</a>
+            <a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div style="max-width:700px;margin:0 auto;padding:30px 20px;">
+        <h2><i class="fas fa-plus-circle"></i> Create Result Publish Session</h2><hr>
+        <div class="card"><div class="card-body">
+            <p class="text-muted mb-3">
+                A publish session collects all Result records for a given <strong>subject + class + terminal</strong>.
+                After creation, results are locked, reviewed, approved, and finally published to students.
+            </p>
+            <form method="post">{% csrf_token %}
+                <div class="mb-3"><label class="form-label">Session Name</label>
+                    <input type="text" class="form-control" name="name" placeholder="e.g. 1st Terminal 2025" required></div>
+                <div class="mb-3"><label class="form-label">Subject</label>
+                    <select name="subject" class="form-select" required>
+                        <option value="">Select subject…</option>{% for subj in subjects %}<option value="{{ subj.id }}">{{ subj.name }}</option>{% endfor %}
+                    </select></div>
+                <div class="mb-3"><label class="form-label">Target Class</label>
+                    <select name="target_class" class="form-select" required>
+                        <option value="">Select class…</option>{% for cls in classes %}<option value="{{ cls }}">{{ cls }}</option>{% endfor %}
+                    </select></div>
+                <div class="mb-3"><label class="form-label">Academic Year</label>
+                    <select name="academic_year" class="form-select">
+                        <option value="">—</option>{% for ay in academic_years %}<option value="{{ ay.id }}" {% if ay.is_current %}selected{% endif %}>{{ ay.name }}</option>{% endfor %}
+                    </select></div>
+                <div class="mb-3"><label class="form-label">Terminal Source (collect Results from)</label>
+                    <select name="terminal" class="form-select" required>
+                        {% for val, label in terminals %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+                    </select></div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Create Session</button>
+                <a href="{% url 'core:publish_session_list' %}" class="btn btn-secondary ms-2">Cancel</a>
+            </form>
+        </div></div>
+    </div>
+</body>
+</html>

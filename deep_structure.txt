@@ -1,0 +1,41 @@
+Line | Indent | Tag | Content
+--------------------------------------------------------------------------------
+ 465 |   12 | DIV OPEN | <div class="form-card">
+ 466 |   16 | DIV OPEN | <div class="form-header">
+ 467 |   20 | DIV OPEN | <div class="form-icon">
+ 474 |   20 | DIV CLOSE | </div>
+ 477 |   16 | DIV CLOSE | </div>
+ 482 |   24 | DIV OPEN | <div class="success-message">
+ 488 |   24 | DIV CLOSE | </div>
+ 490 |   24 | DIV OPEN | <div class="warning-box">
+ 496 |   28 | DIV OPEN | <div>{# Allow HTML in warning message #}
+ 498 |   28 | DIV CLOSE | </div>
+ 499 |   24 | DIV CLOSE | </div>
+ 501 |   24 | DIV OPEN | <div class="error-banner">
+ 506 |   24 | DIV CLOSE | </div>
+ 511 |   16 | FORM OPEN | <form method="POST" enctype="multipart/form-data" class="modern-form" id="upload
+ 515 |   20 | DIV OPEN | <div class="form-group">
+ 528 |   20 | DIV CLOSE | </div>
+ 532 |   20 | DIV OPEN | <div class="form-group">
+ 545 |   20 | DIV CLOSE | </div>
+ 550 |   24 | DIV OPEN | <div class="upload-icon">
+ 556 |   24 | DIV CLOSE | </div>
+ 557 |   24 | DIV OPEN | <div class="upload-text">
+ 561 |   24 | DIV CLOSE | </div>
+ 563 |   24 | DIV OPEN | <div class="file-info" id="fileInfo">
+ 565 |   24 | DIV CLOSE | </div>
+ 568 |   20 | DIV OPEN | <div class="form-actions">
+ 588 |   20 | DIV CLOSE | </div>
+ 589 |   16 | FORM CLOSE | </form>
+ 591 |   17 | DIV OPEN | <div class="instructions-section">
+ 655 |   20 | DIV OPEN | <div class="warning-box" style="margin-top: 1.5rem;">
+ 663 |   20 | DIV CLOSE | </div>
+ 673 |   16 | DIV CLOSE | </div>
+ 674 |   12 | DIV CLOSE | </div>
+ 675 |    8 | DIV CLOSE | </div>
+ 676 |    4 | DIV CLOSE | </div>
+
+
+ANALYSIS: check if instruction-section at line 591 matches any </div>
+Expecting: line 591 (indent 17) is INSIDE the form-card
+If be inside form-card, it should be part of <form> and <form-card> structures

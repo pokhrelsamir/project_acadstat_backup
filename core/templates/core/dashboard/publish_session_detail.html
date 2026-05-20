@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="content=device-width, initial-scale=1.0">
+    <title>Publish Session — {{ session.name }} — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>.result-table th{background:#f3f4f6;}</style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-file-signature"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/publish-sessions/"><i class="fas fa-list"></i> Sessions</a>
+            <a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div style="max-width:1400px;margin:0 auto;padding:30px 20px;">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h2><i class="fas fa-file-signature"></i> {{ session.name }}</h2>
+                <p class="text-muted mb-0">Subject: <strong>{{ session.subject.name }}</strong> &nbsp;|&nbsp; Class: <strong>{{ session.target_class }}</strong>
+                    &nbsp;|&nbsp; Status:
+                    {% if session.status == 'published' %}<span class="badge bg-success">{{ session.get_status_display }}</span>
+                    {% elif session.status == 'approved' %}<span class="badge bg-info">{{ session.get_status_display }}</span>
+                    {% elif session.status == 'under_review' %}<span class="badge bg-warning">{{ session.get_status_display }}</span>
+                    {% elif session.status == 'rejected' %}<span class="badge bg-danger">{{ session.get_status_display }}</span>
+                    {% else %}<span class="badge bg-light text-dark">{{ session.get_status_display }}</span>{% endif %}
+                </p>
+                {% if session.published_at %}<p class="text-muted"><small>Published: {{ session.published_at|date:"M d Y H:i" }}</small></p>{% endif %}
+            </div>
+            <a href="{% url 'core:publish_session_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+        {% if messages %}{% for m in messages %}
+        <div class="alert alert-{{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+        {% if session.rejection_reason %}
+        <div class="alert alert-danger"><strong>Rejection reason:</strong> {{ session.rejection_reason }}</div>
+        {% endif %}
+
+        <!-- Workflow action bar -->
+        <div class="mb-3 btn-group" role="group">
+            {% if session.status == 'draft' %}
+            <form method="post" style="display:inline;">{% csrf_token %}
+                <button type="submit" formaction="{% url 'core:publish_session_submit_for_review' session.id %}"
+                        class="btn btn-warning btn-sm" onclick="return confirm('Submit for review?')">
+                    <i class="fas fa-paper-plane"></i> Submit for Review</button>
+            </form>
+            {% elif session.status == 'under_review' %}
+            <form method="post" style="display:inline;">{% csrf_token %}
+                <button type="submit" formaction="{% url 'core:publish_session_approve' session.id %}"
+                        class="btn btn-success btn-sm"><i class="fas fa-check"></i> Approve</button>
+                <button type="submit" formaction="{% url 'core:publish_session_reject' session.id %}"
+                        class="btn btn-danger btn-sm" onclick="return confirm('Reject this session?')">
+                    <i class="fas fa-times"></i> Reject</button>
+            </form>
+            {% elif session.status == 'approved' %}
+            <form method="post" style="display:inline;">{% csrf_token %}
+                <button type="submit" formaction="{% url 'core:publish_session_publish' session.id %}"
+                        class="btn btn-success btn-sm" onclick="return confirm('Publish to all students? This sends email notifications.')">
+                    <i class="fas fa-bullhorn"></i> Publish</button>
+            </form>
+            {% elif session.status == 'published' %}
+            <form method="post" style="display:inline;">{% csrf_token %}
+                <button type="submit" formaction="{% url 'core:publish_session_archive' session.id %}"
+                        class="btn btn-secondary btn-sm" onclick="return confirm('Archive this session?')">
+                    <i class="fas fa-archive"></i> Archive</button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- Bulk lock -->
+        <form method="post" id="bulk_lock_form">{% csrf_token %}
+            <div class="btn-group btn-group-sm mb-3" role="group">
+                <button type="submit" formaction="{% url 'core:publish_session_detail' session.id %}" name="action" value="lock_all" class="btn btn-outline-primary btn-sm">Lock All</button>
+                <button type="submit" formaction="{% url 'core:publish_session_detail' session.id %}" name="action" value="unlock_all" class="btn btn-outline-secondary btn-sm">Unlock All</button>
+            </div>
+        </form>
+
+        <!-- Results table -->
+        <div class="card"><div class="card-body">
+            <table class="table table-sm table-hover result-table"><thead><tr>
+                <th>#</th><th>Student</th><th>Marks</th><th>Total</th><th>%</th><th>Grade</th><th>Locked</th><th>Remarks</th><th>Actions</th>
+            </tr></thead><tbody>
+            {% for entry in entries %}
+            {% with r=entry.result %}
+            <tr class="{% if entry.is_locked %}table-active{% endif %}">
+                <td>{{ forloop.counter }}</td><td>{{ r.student.name }}</td>
+                <td>{{ r.marks_obtained }}</td><td>{{ r.total_marks }}</td>
+                <td>{{ r.percentage }}%</td><td><strong>{{ r.grade }}</strong></td>
+                <td>{% if entry.is_locked %}<i class="fas fa-lock text-danger"></i>{% else %}<i class="fas fa-unlock text-muted"></i>{% endif %}</td>
+                <td><span class="text-muted small">{{ r.remarks|truncatechars:40|default:"—" }}</span></td>
+                <td>
+                    {% if not entry.is_locked %}
+                    <form method="post" style="display:inline;">{% csrf_token %}
+                        <input type="hidden" name="action" value="lock_entry"><input type="hidden" name="entry_id" value="{{ entry.id }}">
+                        <button type="submit" class="btn btn-xs btn-outline-primary btn-sm">Lock</button></form>
+                    {% else %}
+                    <form method="post" style="display:inline;">{% csrf_token %}
+                        <input type="hidden" name="action" value="unlock_entry"><input type="hidden" name="entry_id" value="{{ entry.id }}">
+                        <button type="submit" class="btn btn-xs btn-outline-secondary btn-sm">Unlock</button></form>
+                    {% endif %}
+                    <form method="post" style="display:inline;" class="mt-1">{% csrf_token %}
+                        <input type="hidden" name="action" value="add_remark"><input type="hidden" name="entry_id" value="{{ entry.id }}">
+                        <input type="text" name="remarks" class="form-control form-control-sm d-inline-block" style="width:140px;" placeholder="Remark...">
+                        <button type="submit" class="btn btn-xs btn-link btn-sm">+ Remark</button></form>
+                </td>
+            </tr>{% endwith %}
+            {% empty %}<tr><td colspan="9" class="text-center text-muted">No results in this session.</td></tr>{% endfor %}
+            </tbody></table>
+            <small class="text-muted">Total entries: {{ entries.count }}</small>
+        </div></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson Plan Detail — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .lpd-wrapper{max-width:900px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .back-link{display:inline-flex;align-items:center;gap:8px;color:var(--pri);text-decoration:none;font-weight:600;margin-bottom:20px;}
+        .plan-card{background:white;border-radius:16px;padding:32px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;}
+        .plan-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:28px;flex-wrap:wrap;}
+        .plan-header h1{margin:0;font-size:1.5rem;color:#1e293b;}
+        .plan-header .subject-pill{padding:4px 14px;border-radius:20px;background:#e0e7ff;color:#3730a3;font-size:.82rem;font-weight:600;}
+        .status-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:.8rem;font-weight:700;text-transform:uppercase;}
+        .s-planned{background:#fef3c7;color:#92400e;}
+        .s-completed{background:#d1fae5;color:#065f46;}
+        .s-skipped{background:#fee2e2;color:#991b1b;}
+        .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+        .form-grid .full{grid-column:1/-1;}
+        .form-group label{display:block;font-size:.82rem;font-weight:700;color:#64748b;margin-bottom:4px;}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;font-family:inherit;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-danger{background:#ef4444;color:white;}
+        .btn-sm{padding:6px 14px;font-size:.82rem;}
+        .method-badge{padding:3px 10px;border-radius:8px;background:#e0e7ff;color:#3730a3;font-size:.75rem;font-weight:600;text-transform:capitalize;}
+        .meta-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px;}
+        .meta-row span{font-size:.85rem;color:#94a3b8;}
+        .meta-row i{color:var(--pri);margin-right:4px;}
+        @media(max-width:768px){.lpd-wrapper{padding:15px;}.form-grid{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-book"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/lesson-plans/"><i class="fas fa-list"></i> All Plans</a>
+            <a href="/syllabus/"><i class="fas fa-chart-bar"></i> Syllabus</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="lpd-wrapper">
+        <a href="{% url 'core:lesson_plans' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Plans</a>
+
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;
+             color:{% if m.tags=='error' %}#dc2626{% else %}#16a34a{% endif %};
+             background:{% if m.tags=='error' %}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="plan-card">
+                <div class="plan-header">
+                    <div>
+                        <h1>{{ plan.title }}
+                            <span class="subject-pill">{{ plan.subject.name }}</span>
+                            <span class="status-badge s-{{ plan.status }}">
+                                {% for key, label in LESSON_STATUS_CHOICES %}{% if key == plan.status %}{{ label }}{% endif %}{% endfor %}
+                            </span>
+                        </h1>
+                        <div class="meta-row" style="margin-top:10px;">
+                            <span><i class="fas fa-users"></i>{{ plan.class_section }}</span>
+                            <span><i class="fas fa-chalkboard-teacher"></i>{{ plan.get_teaching_method_display }}</span>
+                            <span><i class="fas fa-clock"></i>{{ plan.duration_minutes }} min</span>
+                            <span><i class="fas fa-file-alt"></i>{{ plan.chapter_topic }}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div><label>Subject</label>
+                        <select name="subject">{% for s in teacher_subjects %}<option value="{{ s.id }}" {% if plan.subject.id == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select>
+                    </div>
+                    <div><label>Class / Section</label><input type="text" name="class_section" value="{{ plan.class_section }}"></div>
+                    <div class="full"><label>Title</label><input type="text" name="title" value="{{ plan.title }}"></div>
+                    <div class="full"><label>Chapter / Topic</label><input type="text" name="chapter_topic" value="{{ plan.chapter_topic }}"></div>
+                    <div><label>Planned Date</label><input type="date" name="planned_date" value="{{ plan.planned_date|date:'Y-m-d' }}"></div>
+                    <div><label>Actual Date</label><input type="date" name="actual_date" value="{{ plan.actual_date|date:'Y-m-d'|default:'' }}"></div>
+                    <div><label>Duration (min)</label><input type="number" name="duration_minutes" value="{{ plan.duration_minutes }}" min="1"></div>
+                    <div><label>Status</label>
+                        <select name="status">
+                            {% for key, label in LESSON_STATUS_CHOICES %}
+                            <option value="{{ key }}" {% if plan.status == key %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div><label>Teaching Method</label>
+                        <select name="teaching_method">
+                            {% for key, label in TEACHING_METHOD_CHOICES %}
+                            <option value="{{ key }}" {% if plan.teaching_method == key %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="full"><label>Learning Outcomes</label><textarea name="learning_outcomes" rows="3">{{ plan.learning_outcomes }}</textarea></div>
+                    <div class="full"><label>Resources Used</label><textarea name="resources_used" rows="2">{{ plan.resources_used }}</textarea></div>
+                    <div class="full"><label>Remarks</label><textarea name="remarks" rows="2">{{ plan.remarks }}</textarea></div>
+                    <div style="grid-column:1/-1;font-size:.82rem;color:#94a3b8;">
+                        Created: {{ plan.created_at|date:"M d, Y H:i" }} &nbsp;|&nbsp; Updated: {{ plan.updated_at|date:"M d, Y H:i" }}
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

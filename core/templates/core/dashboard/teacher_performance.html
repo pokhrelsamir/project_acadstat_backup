@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Performance — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#0f172a;}
+        .tp-wrapper{max-width:1400px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{margin-bottom:24px;}
+        .page-header h1{font-size:1.6rem;color:#f1f5f9;font-weight:700;}
+        .t-card{background:#1e293b;border-radius:16px;padding:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.3);margin-bottom:20px;border:1px solid #334155;}
+        .chart-wrap{position:relative;height:300px;}
+        .tbl-card{background:#1e293b;border-radius:16px;padding:24px;margin-bottom:20px;overflow-x:auto;border:1px solid #334155;}
+        .data-table{width:100%;border-collapse:collapse;font-size:.9rem;}
+        .data-table th{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;padding:14px;text-align:left;font-weight:600;}
+        .data-table td{padding:12px 8px;border-bottom:1px solid #1e293b;color:#cbd5e1;}
+        .data-table tr:hover td{background:#334155;}
+        .score-bar{background:#334155;border-radius:6px;height:8px;overflow:hidden;margin-top:4px;}
+        .score-fill{height:8px;border-radius:6px;}
+        .rosters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+        @media(max-width:768px){.tp-wrapper{padding:15px;}.rosters-grid{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar"><h2 class="logo">🎓 AcadStat</h2>
+        <div class="nav-links"><a href="/smart-dashboard/"><i class="fas fa-brain"></i> Analytics</a><a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a><a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a></div>
+    </nav>
+    <div class="tp-wrapper">
+        <div class="page-header"><h1><i class="fas fa-chart-line"></i> Teacher Performance Overview</h1></div>
+        <div class="t-card"><div class="chart-wrap"><canvas id="perfChart"></canvas></div></div>
+        <div class="tbl-card">
+            <h3 style="color:#cbd5e1;margin:0 0 16px 0;"><i class="fas fa-users"></i> All Teachers</h3>
+            <table class="data-table">
+                <thead><tr><th>#</th><th>Name</th><th>Department</th><th>Subjects</th><th>Students</th><th>Eval Count</th><th>Avg. Score</th><th>Performance Bar</th></tr></thead>
+                <tbody>
+                {% for d in teacher_data %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="bld" style="color:#f1f5f9;">{{ d.teacher.get_full_name }}</td>
+                    <td>{{ d.teacher.department.name|default:"—" }}</td>
+                    <td>{{ d.subjects }}</td>
+                    <td>{{ d.students }}</td>
+                    <td>{{ d.eval_count }}</td>
+                    <td class="bld" style="color:{# if d.avg_score >= 75%}#10b981{% elif d.avg_score >= 50%}#f59e0b{% else %}#ef4444{% endif %};">{{ d.avg_score }}/100</td>
+                    <td><div class="score-bar"><div class="score-fill" style="width:{{ d.avg_score }}%;background:{# if d.avg_score >= 75%}linear-gradient(90deg,#10b981,#059669){% elif d.avg_score >= 50%}linear-gradient(90deg,#f59e0b,#d97706){% else %}linear-gradient(90deg,#ef4444,#dc2626){% endif %};"></div></div></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align:center;color:#64748b;padding:30px;">No data.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded',()=>{
+            const tc={{ teacher_data|json_script:"tdata" }}||[];
+            const labels=tc.map(d=>d.teacher.get_full_name);
+            const scores=tc.map(d=>d.avg_score);
+            const subCounts=tc.map(d=>d.subjects);
+            if(!labels.length) return;
+            new Chart(document.getElementById('perfChart'),{
+                type:'bar',data:{
+                    labels,datasets:[
+                        {label:'Avg Score',data:scores,backgroundColor:'rgba(102,126,234,.7)',borderColor:'rgb(102,126,234)',borderWidth:2,borderRadius:8,yAxisID:'y'},
+                        {label:'Subjects',data:subCounts,type:'line',borderColor:'rgb(16,185,129)',backgroundColor:'rgba(16,185,129,.1)',fill:false,tension:.4,yAxisID:'y1'},
+                    ]
+                },options:{responsive:true,maintainAspectRatio:false,
+                    plugins:{legend:{labels:{color:'#cbd5e1'}}},
+                    scales:{
+                        y:{type:'linear',display:true,position:'left',ticks:{color:'#cbd5e1'},grid:{color:'rgba(255,255,255,.1)'},title:{display:true,text:'Score',color:'#cbd5e1'}},
+                        y1:{type:'linear',display:true,position:'right',ticks:{color:'#94a3b8'},grid:{drawOnChartArea:false},title:{display:true,text:'Subjects',color:'#94a3b8'}},
+                        x:{ticks:{color:'#cbd5e1'},grid:{color:'rgba(255,255,255,.1)'}}
+                    }}}
+            });
+        });
+    </script>
+</body>
+</html>

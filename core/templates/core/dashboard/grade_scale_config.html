@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Scale Configuration — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--bg:#f8fafc;}
+        .gs-wrapper{max-width:700px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{margin-bottom:24px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .form-card{background:white;border-radius:20px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.1);border:1px solid #e2e8f0;}
+        .form-card h2{margin-top:0;color:#1e293b;margin-bottom:24px;}
+        .form-group{margin-bottom:20px;}
+        .form-group label{display:block;font-size:.88rem;font-weight:600;color:#374151;margin-bottom:6px;}
+        .form-group input,.form-group textarea{width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;font-family:inherit;}
+        .form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--pri);}
+        .form-row{display:flex;gap:12px;align-items:flex-end;}
+        .grade-grid{display:grid;grid-template-columns:1fr auto 1fr auto;gap:12px;align-items:center;margin-bottom:24px;padding:16px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;}
+        .grade-grid label{font-size:.82rem;font-weight:600;color:#64748b;}
+        .grade-grid input{padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;}
+        .gt-divider{font-size:1.2rem;color:#94a3b8;font-weight:700;}
+        .preview-badge{padding:6px 18px;border-radius:12px;font-weight:700;font-size:.9rem;}
+        .info-box{background:#dbeafe;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:.88rem;color:#1e40af;line-height:1.6;}
+        @media(max-width:768px){.gs-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-tachometer-alt"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/smart-dashboard/"><i class="fas fa-brain"></i> Analytics</a>
+            <a href="/dashboard/"><i class="fas fa-chart-pie"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="gs-wrapper">
+        <div class="page-header"><h1><i class="fas fa-sliders-h"></i> Grade Scale Configuration</h1></div>
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;color:{# if m.tags=='error'}#dc2626{% else %}#16a34a{% endif %};background:{# if m.tags=='error'}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+        <div class="form-card">
+            <h2><i class="fas fa-ruler-combined"></i> Configure Grade Scale</h2>
+            <div class="info-box"><i class="fas fa-info-circle"></i> This scale is used to convert percentage marks into letter grades (A+, A, B+, … F) across all student analytics and mark sheets.</div>
+            <form method="post">{% csrf_token %}
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Scale Name</label>
+                    {{ form.name }}
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-percentage"></i> Passing Mark (%)</label>
+                    {{ form.pass_mark_percent }}
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-sticky-note"></i> Description (optional)</label>
+                    {{ form.description }}
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <label style="font-size:.9rem;color:#374151;font-weight:600;"><i class="fas fa-check-circle"></i>
+                        Active Scale
+                        <div style="font-size:.75rem;color:#94a3b8;font-weight:400;margin-top:2px;margin-left:24px;">Only one active scale is used at a time</div>
+                    </label>
+                    {{ form.is_active }}
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Configuration</button>
+                </div>
+            </form>
+            <div class="grade-grid" style="margin-top:24px;">
+                <div><h4 style="margin:0 0 8px 0;color:#1e293b;">⚠️ Grade Thresholds (Fixed)</h4>
+                    <div class="grade-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">
+                        <span style="font-size:.82rem;color:#f59e0b;"><strong>A+</strong> = 90%+</span>
+                        <span style="font-size:.82rem;color:#64748b;"><strong>A</strong> = 80–89%</span>
+                        <span style="font-size:.82rem;color:#3b82f6;"><strong>B+</strong> = 70–79%</span>
+                        <span style="font-size:.82rem;color:#64748b;"><strong>B</strong> = 60–69%</span>
+                        <span style="font-size:.82rem;color:#64748b;"><strong>C+</strong> = 50–59%</span>
+                        <span style="font-size:.82rem;color:#64748b;"><strong>C</strong> = 40–49%</span>
+                        <span style="font-size:.82rem;color:#ef4444;"><strong>D</strong> = 30–39%</span>
+                        <span style="font-size:.82rem;color:#64748b;"><strong>F</strong> = &lt; 30%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

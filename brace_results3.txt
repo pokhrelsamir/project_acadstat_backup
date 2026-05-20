@@ -1,0 +1,9 @@
+JS body length: 0
+JS body starts with: ''
+JS body ends with: ''
+
+
+Final brace balance: 0
+Final paren balance: 0
+Max brace depth: 0 (line 0)
+Max paren depth: 0 (line 0)

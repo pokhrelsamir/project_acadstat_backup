@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Recommendations — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function(){ const saved=localStorage.getItem('theme'); const t=saved||'dark'; document.documentElement.setAttribute('data-theme',t); })();
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-brain"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/smart-dashboard/"><i class="fas fa-chart-line"></i> Analytics</a>
+            <a href="/ai-recommendations/" class="active"><i class="fas fa-robot"></i> AI Recs</a>
+            <a href="/performance-heatmap/"><i class="fas fa-th"></i> Heatmap</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/></svg>
+                <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+        </div>
+    </nav>
+    <div style="max-width:1200px;margin:0 auto;padding:2rem;">
+        <div class="page-wrapper">
+            <a href="/teacher-dashboard/" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+            <div class="form-card">
+                <div class="form-header">
+                    <h2><i class="fas fa-robot"></i> AI Student Recommendations</h2>
+                    <p>AI-powered insights &amp; actionable teaching strategies for your students</p>
+                </div>
+
+                <form method="GET" class="modern-form" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:end;margin-bottom:2rem;">
+                    {% csrf_token %}
+                    <div class="form-group" style="flex:1;min-width:180px;margin:0;">
+                        <label><i class="fas fa-school"></i> Class</label>
+                        <select name="student_class" class="form-control" onchange="this.form.submit()">
+                            <option value="">All Classes</option>
+                            {% for cls in available_classes %}
+                            <option value="{{ cls }}" {% if selected_class == cls %}selected{% endif %}>{{ cls }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;min-width:180px;margin:0;">
+                        <label><i class="fas fa-book-open"></i> Subject</label>
+                        <select name="subject" class="form-control" onchange="this.form.submit()">
+                            <option value="">All Subjects</option>
+                            {% for s in all_subjects_values %}
+                            <option value="{{ s.0 }}" {% if selected_subject_id == s.0|stringformat:"s" %}selected{% endif %}>{{ s.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary" style="padding:0.9rem 1.5rem;"><i class="fas fa-sync"></i> Refresh</button>
+                </form>
+
+                {% if recommendations %}
+                <div style="display:grid;gap:1.5rem;">
+                    {% for rec in recommendations %}
+                    <div style="background:var(--bg-card);border-radius:16px;padding:1.5rem;border:1px solid var(--border-color);box-shadow:0 4px 20px rgba(0,0,0,.12);">
+                        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+                            <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,{{ rec.color }}33,{{ rec.color }}11);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">
+                                {% if rec.level == 'critical' %}<i class="fas fa-exclamation-triangle" style="color:{{ rec.color }}"></i>
+                                {% elif rec.level == 'warning' %}<i class="fas fa-exclamation-circle" style="color:{{ rec.color }}"></i>
+                                {% elif rec.level == 'fair' %}<i class="fas fa-thumbs-up" style="color:{{ rec.color }}"></i>
+                                {% else %}<i class="fas fa-trophy" style="color:{{ rec.color }}"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h3 style="margin:0;color:var(--text-primary);font-size:1.1rem;">{{ rec.student.name }}</h3>
+                                <small style="color:var(--text-secondary);">{{ rec.total_subjects }} subject(s) · Avg {{ rec.avg_pct }}%</small>
+                            </div>
+                            <div style="margin-left:auto;text-align:right;">
+                                <div style="font-size:1.5rem;font-weight:700;color:{{ rec.color }};">{{ rec.avg_pct }}%</div>
+                                <small style="color:var(--text-secondary);">Class Avg</small>
+                            </div>
+                        </div>
+                        <div style="background:var(--input-bg);border-radius:10px;padding:1rem;margin-bottom:1rem;color:var(--text-primary);font-size:.95rem;">
+                            {{ rec.level_intro }}
+                            {% if rec.weak_subjects %}
+                            <br><small style="color:var(--text-secondary);">Needs focus: {{ rec.weak_names }}</small>
+                            {% endif %}
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                            <div style="background:rgba(102,126,234,.08);border-radius:10px;padding:1rem;">
+                                <div style="font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem;color:var(--text-primary);">
+                                    <i class="fas fa-bullseye" style="color:#667eea;"></i> {{ rec.action_title }}
+                                </div>
+                                <div style="color:var(--text-secondary);font-size:.9rem;">{{ rec.action_desc }}</div>
+                            </div>
+                            <div style="background:rgba(16,185,129,.08);border-radius:10px;padding:1rem;">
+                                <div style="font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem;color:var(--text-primary);">
+                                    <i class="fas fa-lightbulb" style="color:#10b981;"></i> Study Tip
+                                </div>
+                                <div style="color:var(--text-secondary);font-size:.9rem;">{{ rec.study_tip }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align:center;padding:3rem;color:var(--text-secondary);">
+                    <i class="fas fa-robot" style="font-size:3rem;margin-bottom:1rem;opacity:.3;"></i>
+                    <p>No students with marks yet, or no students match your filter.</p>
+                </div>
+                {% endif %}
+
+                <div style="margin-top:2rem;padding:1.5rem;background:rgba(102,126,234,.08);border-radius:12px;border:1px solid rgba(102,126,234,.2);color:var(--text-secondary);font-size:.9rem;">
+                    <i class="fas fa-info-circle" style="color:#667eea;"></i>
+                    <strong style="color:var(--text-primary);">How this works:</strong>
+                    Recommendations are rule-based and informed by each student's average across all subjects.
+                    Average &lt;40% → Critical. 40–60% → Warning. 60–75% → Fair. 75%+ → Excellent.
+                    Weak subjects (below 50% in a single subject) also inform personalized study tips.
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('themeToggle').addEventListener('click',function(){
+            const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+            document.documentElement.setAttribute('data-theme',t);
+            localStorage.setItem('theme',t);
+        });
+    </script>
+</body>
+</html>

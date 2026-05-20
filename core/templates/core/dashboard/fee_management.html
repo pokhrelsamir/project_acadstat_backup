@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fee Management — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .fm-wrapper{max-width:1200px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px;}
+        .kpi{background:white;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.07);text-align:center;}
+        .kpi .val{font-size:1.8rem;font-weight:700;}
+        .kpi .lbl{font-size:.82rem;color:#64748b;margin-top:4px;text-transform:uppercase;}
+        .kpi-ok .val{color:var(--ok);} .kpi-err .val{color:var(--err);} .kpi-pri .val{color:var(--pri);}
+        .filter-bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px;background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .filter-bar select,.filter-bar input{padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;}
+        .tbl-card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;overflow-x:auto;}
+        .data-table{width:100%;border-collapse:collapse;font-size:.88rem;}
+        .data-table th{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;padding:12px;text-align:left;font-weight:600;}
+        .data-table td{padding:12px 8px;border-bottom:1px solid #f1f5f9;}
+        .data-table tr:hover td{background:#f8fafc;}
+        .st-paid{color:var(--ok);font-weight:600;}
+        .st-pend{color:var(--warn);font-weight:600;}
+        .st-over{color:var(--err);font-weight:600;}
+        .st-owed{color:var(--err);font-weight:700;}
+        @media(max-width:768px){.fm-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-money-bill-wave"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/marks-list/"><i class="fas fa-list"></i> Marks</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="fm-wrapper">
+        <div class="page-header"><h1><i class="fas fa-money-bill-wave"></i> Fee Management</h1></div>
+        <div class="kpi-row">
+            <div class="kpi kpi-pri"><div class="val">Rs.{{ total_amount|floatformat:0 }}</div><div class="lbl">Total Due</div></div>
+            <div class="kpi kpi-ok"><div class="val">Rs.{{ total_paid|floatformat:0 }}</div><div class="lbl">Collected</div></div>
+            <div class="kpi kpi-err"><div class="val">Rs.{{ total_pending|floatformat:0 }}</div><div class="lbl">Pending</div></div>
+        </div>
+        <div class="filter-bar">
+            <select name="student_class" onchange="location.href='?student_class='+this.value;">
+                <option value="">All Classes</option>
+                {% for c in student_classes %}
+                    <option value="{{ c }}"{% if selected_class == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+            <select name="status" onchange="location.href='?status='+this.value+'{% if selected_class %}&student_class={{ selected_class }}{% endif %}'">
+                <option value="">All Statuses</option>
+                <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Paid</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Overdue</option>
+            </select>
+            <a href="#" class="btn" style="background:#f1f5f9;color:#374151;" onclick="location.href='/fee-management/';return false;">Reset</a>
+        </div>
+        <div class="tbl-card">
+            <table class="data-table">
+                <thead><tr>
+                    <th>#</th><th>Student</th><th>Type</th>
+                    <th>Amount</th><th>Paid</th><th>Balance</th>
+                    <th>Due Date</th><th>Status</th><th>Action</th>
+                </tr></thead>
+                <tbody>
+                {% for fee in fees %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ fee.student.name }}</strong><br><small style="color:#94a3b8;">{{ fee.student.student_class }}</small></td>
+                    <td>{{ fee.get_fee_type_display }}</td>
+                    <td>Rs.{{ fee.amount }}</td>
+                    <td>Rs.{{ fee.amount_paid }}</td>
+                    <td class="st-owed">Rs.{{ fee.balance }}</td>
+                    <td>{{ fee.due_date }}</td>
+                    <td>
+                        {% if fee.status == 'paid' %}
+                            <span class="st-paid"><i class="fas fa-check-circle"></i> Paid</span>
+                        {% elif fee.status == 'overdue' %}
+                            <span class="st-over"><i class="fas fa-exclamation-circle"></i> Overdue</span>
+                        {% elif fee.status == 'pending' %}
+                            <span class="st-pend"><i class="fas fa-clock"></i> Pending</span>
+                        {% else %}
+                            <span>{{ fee.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if fee.status != 'paid' %}
+                        <button class="btn btn-primary btn-sm" onclick="openPayModal({{ fee.id }}, {{ fee.balance }}, '{{ fee.student.name }}')">
+                            <i class="fas fa-rupee-sign"></i> Record
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" style="text-align:center;padding:40px;color:#94a3b8;">No fee records found.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        function openPayModal(id, balance, name) {
+            var amt = prompt('Record payment for ' + name + '\\nAmount paid (max Rs.' + balance + '):', balance);
+            if (amt !== null && !isNaN(amt)) {
+                var f = document.createElement('form');
+                f.method = 'POST'; f.action = location.href;
+                f.innerHTML = '<input type="hidden" name="action" value="record_payment"><input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"><input type="hidden" name="fee_id" value="'+id+'"><input type="hidden" name="amount_paid" value="'+amt+'">';
+                document.body.appendChild(f); f.submit();
+            }
+        }
+    </script>
+</body>
+</html>

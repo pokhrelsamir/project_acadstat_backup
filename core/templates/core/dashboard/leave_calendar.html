@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Calendar — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .lc-wrapper{max-width:1100px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .nav-btns{display:flex;gap:8px;}
+        .nb{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:white;border:2px solid #e2e8f0;color:#1e293b;font-size:.85rem;font-weight:700;cursor:pointer;text-decoration:none;transition:.2s;}
+        .nb:hover{background:var(--pri);color:white;border-color:var(--pri);}
+        .legend{margin-bottom:16px;display:flex;gap:14px;flex-wrap:wrap;}
+        .legend-item{display:flex;align-items:center;gap:6px;font-size:.78rem;color:#64748b;}
+        .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+        .cal-month{background:white;border-radius:16px;padding:18px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;overflow:hidden;}
+        .cal-hd{text-align:center;margin-bottom:14px;}
+        .cal-hd h2{margin:0;font-size:1.2rem;font-weight:700;color:#1e293b;}
+        .cal-hd span{display:block;font-size:.75rem;color:#94a3b8;margin-top:2px;}
+        .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;text-align:center;font-size:.72rem;font-weight:700;text-transform:uppercase;color:#94a3b8;margin-bottom:2px;}
+        .cal-days{display:flex;flex-direction:column;gap:1px;}
+        .cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
+        .day-cell{min-height:90px;padding:6px 8px 4px;background:#fafafa;border-radius:4px;transition:.2s;cursor:pointer;font-size:.78rem;}
+        .day-cell:hover{background:#ede9fe;}
+        .day-cell.other-month{opacity:.3;}
+        .day-cell.today{background:#dbeafe;border:2px solid var(--pri);}
+        .day-num{font-weight:700;font-size:.8rem;margin-bottom:3px;}
+        .day-num.today{color:var(--pri);}
+        .leave-pill{display:inline-block;padding:1px 5px;border-radius:4px;margin:1px 0;font-size:.62rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer;}
+        .type-sick{background:#fee2e2;color:#991b1b;}
+        .type-casual{background:#fef3c7;color:#92400e;}
+        .type-annual{background:#dbeafe;color:#1e40af;}
+        .type-emergency{background:#fce7f3;color:#9d174d;}
+        .type-default{background:#f1f5f9;color:#1e293b;}
+        .leave-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;}
+        .leave-modal.show{display:flex;}
+        .leave-modal-inner{background:white;border-radius:12px;padding:20px;width:90%;max-width:400px;max-height:80vh;overflow-y:auto;}
+        .leave-modal h3{margin:0 0 12px;font-size:1rem;}
+        .tt{font-size:.75rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:12px;}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-calendar-alt"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/my-leaves/"><i class="fas fa-arrow-left"></i> My Leaves</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="lc-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-calendar-alt"></i> Leave Calendar</h1>
+            <div class="nav-btns">
+                <a href="?month={{ prev_month }}&year={{ prev_year }}" class="nb"><i class="fas fa-chevron-left"></i></a>
+                <a href="?month={{ next_month }}&year={{ next_year }}" class="nb"><i class="fas fa-chevron-right"></i></a>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#bfdbfe;border:2px solid #2563eb;"></div> Today</div>
+            <div class="legend-item"><div class="legend-dot type-casual"></div> Casual</div>
+            <div class="legend-item"><div class="legend-dot type-sick"></div> Sick</div>
+            <div class="legend-item"><div class="legend-dot type-annual"></div> Annual</div>
+            <div class="legend-item"><div class="legend-dot type-emergency"></div> Emergency</div>
+        </div>
+
+        <div class="cal-month">
+            <div class="cal-hd">
+                <h2>{{ month_name }}</h2>
+                <span>{{ teachers|length }} teacher{{ teachers|length|pluralize }} on approved leave</span>
+            </div>
+            <div class="cal-weekdays">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+            <div class="cal-days">
+                {% for week in weeks %}
+                <div class="cal-week">
+                    {% for day in week %}
+                    <div class="day-cell {% if not day.is_current_month %}other-month{% endif %} {% if day.is_today %}today{% endif %}"
+                         onclick="showLeaves(this, '{{ day.date.isoformat }}')">
+                        <div class="day-num {% if day.is_today %}today{% endif %}">{{ day.date.day }}</div>
+                        {% for leave in day.leaves|slice:":3" %}
+                        <span class="leave-pill type-{{ leave.leave_type }}">{{ leave.teacher.get_full_name|truncatechars:10 }}</span>
+                        {% empty %}
+                        {% endfor %}
+                        {% if day.leaves|length > 3 %}
+                        <span style="font-size:.62rem;color:#94a3b8;">+{{ day.leaves|length|add:-3 }} more</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for day detail -->
+    <div class="leave-modal" id="dayModal" onclick="if(event.target===this)this.classList.remove('show')">
+        <div class="leave-modal-inner">
+            <h3><i class="fas fa-calendar-day" style="color:var(--pri);"></i> <span id="modalDate">Selected Date</span></h3>
+            <div id="modalContent" class="tt">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        const leaveData = {{ weeks|json_script:"weeks-data" }};
+        function showLeaves(cell, dateStr) {
+            const leaves = [];
+            {% for week in weeks %}
+            {% for day in week %}
+            if ('{{ day.date.isoformat }}' === dateStr) {
+                leaves.push(...{% for lv in day.leaves %}'{{ day.date.isoformat }}|{{ lv.teacher.get_full_name }}|{{ lv.leave_type }}|{{ lv.start_date }} - {{ lv.end_date }}'{% if not forloop.last %},{% endif %}{% endfor %});
+            }
+            {% endfor %}
+            {% endfor %}
+
+            const modal = document.getElementById('dayModal');
+            const content = document.getElementById('modalContent');
+            document.getElementById('modalDate').textContent = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+            if (leaves.length === 0) {
+                content.innerHTML = '<span style="color:#94a3b8;">No teachers on leave on this day.</span>';
+            } else {
+                let html = '';
+                {% for key, label in LEAVE_TYPE_CHOICES %}
+                {% with type_key=key %}
+                const dayLeaves = {
+                {% for week in weeks %}
+                {% for day in week %}
+                {% if day.leaves %}
+                leaves = [{% for lv in day.leaves %}'{{ lv.teacher.get_full_name }}|{{ lv.start_date|date:"M d" }} → {{ lv.end_date|date:"M d" }}|{{ lv.leave_type }}'{% endfor %}];
+                {% endif %}
+                {% endfor %}
+                {% endfor %}
+                };{% endwith %}
+                
+                const grouped = {};
+                const leavesArr = {% for week in weeks %}{% for day in week %}{% if day.leaves.length > 0 %}leavesArr = [{% for lv in day.leaves %}'{{ lv.teacher.get_full_name }}|{{ lv.teacher.id }}|{{ lv.leave_type }}|{{ lv.start_date|date:"M d" }} → {{ lv.end_date|date:"M d" }}'{% endfor %}];{% endif %}{% endfor %}
+                modal.classList.add('show');
+            }
+        }
+    </script>
+    <style>.leave-modal{toc}</style>
+</body>
+</html>

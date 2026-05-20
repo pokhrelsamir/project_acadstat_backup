@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Messages — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        (function(){ const saved=localStorage.getItem('theme'); const t=saved||'dark'; document.documentElement.setAttribute('data-theme',t); })();
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-envelope"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/student-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/student-messages/" class="active"><i class="fas fa-envelope"></i> Messages{% if unread_count > 0 %} ({{ unread_count }}){% endif %}</a>
+            <a href="/profile/"><i class="fas fa-user"></i> Profile</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <button class="theme-toggle" id="themeToggle"><svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/></svg><svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+        </div>
+    </nav>
+    <div style="max-width:900px;margin:0 auto;padding:2rem;">
+        <div class="page-wrapper">
+            <a href="/student-dashboard/" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+            <div class="form-card">
+                <div class="form-header">
+                    <h2><i class="fas fa-envelope"></i> My Messages</h2>
+                    <p>Messages from your teachers — {{ unread_count }} unread</p>
+                </div>
+
+                {% if error %}
+                <div class="error-banner">{{ error }}</div>
+                {% endif %}
+
+                <!-- Compose -->
+                <div style="margin-bottom:2rem;padding:1.5rem;background:rgba(102,126,234,.08);border-radius:12px;border:1px solid rgba(102,126,234,.2);">
+                    <h4 style="margin:0 0 1rem;color:var(--text-primary);"><i class="fas fa-pen"></i> Message a Teacher</h4>
+                    <form id="composeForm" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:end;">
+                        <div style="flex:1;min-width:180px;">
+                            <label style="color:var(--text-secondary);font-size:.85rem;display:block;margin-bottom:.3rem;">Subject</label>
+                            <input id="msgSubject" type="text" placeholder="e.g. Need help with assignment"
+                                style="width:100%;padding:10px 14px;border-radius:8px;background:var(--input-bg);color:var(--text-primary);border:1px solid var(--border-color);font-size:.9rem;">
+                        </div>
+                        <div style="flex:1;min-width:180px;">
+                            <label style="color:var(--text-secondary);font-size:.85rem;display:block;margin-bottom:.3rem;">To Teacher</label>
+                            <select id="msgTeacher" required style="width:100%;padding:10px;border-radius:8px;background:var(--input-bg);color:var(--text-primary);border:1px solid var(--border-color);">
+                                <option value="">Select Teacher</option>
+                                {% for t in student.teachers.all %}
+                                <option value="{{ t.id }}">{{ t.get_full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div style="flex:3;min-width:200px;">
+                            <label style="color:var(--text-secondary);font-size:.85rem;display:block;margin-bottom:.3rem;">Message</label>
+                            <input id="msgBody" type="text" placeholder="Type your message..."
+                                style="width:100%;padding:10px 14px;border-radius:8px;background:var(--input-bg);color:var(--text-primary);border:1px solid var(--border-color);font-size:.9rem;">
+                        </div>
+                        <button type="button" id="sendMsgBtn" style="padding:10px 20px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;flex-shrink:0;">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Mark all read btn -->
+                {% if unread_count > 0 %}
+                <form method="POST" style="margin-bottom:1rem;">
+                    {% csrf_token %}
+                    <button type="submit" style="background:none;border:none;color:#667eea;cursor:pointer;font-size:.85rem;font-weight:600;">
+                        <i class="fas fa-check-double"></i> Mark all as read
+                    </button>
+                </form>
+                {% endif %}
+
+                <!-- Received Messages -->
+                <div style="display:flex;flex-direction:column;gap:.75rem;">
+                    {% for msg in messages %}
+                    <div style="background:{% if msg.status == 'unread' %}rgba(102,126,234,.1){% else %}var(--bg-card){% endif %};border-radius:12px;padding:1rem;border:1px solid {% if msg.status == 'unread' %}#667eea{% else %}var(--border-color){% endif %};">
+                        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">
+                            {% if msg.status == 'unread' %}
+                            <span style="background:#ef4444;color:#fff;width:10px;height:10px;border-radius:50%;display:inline-block;"></span>
+                            {% endif %}
+                            <span style="font-weight:600;color:var(--text-primary);">
+                                {% if msg.sender %}{{ msg.sender.get_full_name }}{% else %}Teacher{% endif %}
+                            </span>
+                            <span style="color:var(--text-secondary);font-size:.85rem;">· {{ msg.created_at|date:"jS M, Y h:i A" }}</span>
+                        </div>
+                        <div style="font-weight:600;color:var(--text-primary);margin-bottom:.3rem;">{{ msg.subject|default:"(No Subject)" }}</div>
+                        <div style="color:var(--text-secondary);font-size:.9rem;">{{ msg.user }}</div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align:center;padding:3rem;color:var(--text-secondary);">
+                        <i class="fas fa-envelope-open-text" style="font-size:3rem;opacity:.3;margin-bottom:1rem;display:block;"></i>
+                        <p>No messages yet. Reach out to your teachers above!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('themeToggle').addEventListener('click',function(){
+            const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+            document.documentElement.setAttribute('data-theme',t);
+            localStorage.setItem('theme',t);
+        });
+        document.getElementById('sendMsgBtn').addEventListener('click',async function(){
+            const teacher_id = document.getElementById('msgTeacher').value;
+            const subject    = document.getElementById('msgSubject').value;
+            const body       = document.getElementById('msgBody').value;
+            if (!teacher_id || !body.trim()){
+                alert('Please select a teacher and write a message.');
+                return;
+            }
+            const res = await fetch('{% url "core:send_student_message" %}', {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `teacher_id=${teacher_id}&subject=${encodeURIComponent(subject)}&user=${encodeURIComponent(body)}`
+            });
+            const data = await res.json();
+            if(data.success){
+                document.getElementById('msgSubject').value='';
+                document.getElementById('msgBody').value='';
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to send');
+            }
+        });
+    </script>
+</body>
+</html>

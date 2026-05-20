@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="content=device-width, initial-scale=1.0">
+    <title>Backup &amp; Restore — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-database"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/backup-restore/"><i class="fas fa-database"></i> Backup</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div style="max-width:1200px;margin:0 auto;padding:30px 20px;">
+        {% if messages %}{% for m in messages %}
+        <div class="alert alert-{{ m.tags }}">{{ m }}</div>
+        {% endfor %}{% endif %}
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

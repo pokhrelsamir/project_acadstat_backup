@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Detail — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .d-wrapper{max-width:1400px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .info-card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .info-card h3{margin:0 0 16px 0;font-size:1rem;color:#667eea;}
+        .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+        .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem;}
+        .info-row .lbl{color:#64748b;}.info-row .val{font-weight:600;color:#1e293b;}
+        .sub-table{width:100%;border-collapse:collapse;font-size:.9rem;}
+        .sub-table th{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;padding:12px;text-align:left;}
+        .sub-table td{padding:12px;border-bottom:1px solid #f1f5f9;}
+        .sub-table tr:hover td{background:#f8fafc;}
+        .no-file{color:#94a3b8;font-size:.82rem;}
+        @media(max-width:768px){.d-wrapper{padding:15px;}.info-grid{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-user-check"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/assignments/"><i class="fas fa-arrow-left"></i> Assignments</a>
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="d-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-file-contract"></i> {{ assignment.title }}</h1>
+            <span class="sub-badge" style="font-size:.9rem;">{{ assignment.subject.name }}</span>
+        </div>
+        <div class="info-card">
+            <h3><i class="fas fa-info-circle"></i> Assignment Details</h3>
+            <div class="info-grid">
+                <div class="info-row"><span class="lbl">Subject</span><span class="val">{{ assignment.subject.name }}</span></div>
+                <div class="info-row"><span class="lbl">Target Class</span><span class="val">{{ assignment.target_class }}{{ assignment.target_section }}</span></div>
+                <div class="info-row"><span class="lbl">Due Date</span><span class="val">{{ assignment.due_date|date:"F d, Y g:i a" }}</span></div>
+                <div class="info-row"><span class="lbl">Total Marks</span><span class="val">{{ assignment.total_marks }}</span></div>
+                <div class="info-row"><span class="lbl">Priority</span><span class="val">{{ assignment.get_priority_display }}</span></div>
+                <div class="info-row"><span class="lbl">Submissions</span><span class="val">{{ submissions.count }} / {{ assignment.pending_count|add:submissions.count }}</span></div>
+                <div class="info-row"><span class="lbl">Published</span><span class="val">{{ assignment.is_published|yesno:"Yes,No" }}</span></div>
+                <div class="info-row"><span class="lbl">Status</span>
+                    <span class="val">
+                        {% if assignment.is_overdue %}⚠️ Overdue{% else %}🟢 On Time{% endif %}
+                    </span>
+                </div>
+            </div>
+            {% if assignment.description %}
+            <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;color:#374151;line-height:1.7;">
+                <strong>Description:</strong><br>{{ assignment.description }}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if submissions %}
+        <div class="info-card" style="padding:0;">
+            <form method="post" style="padding:24px;">
+                {% csrf_token %}
+                <h3 style="margin:0 0 16px 0;font-size:1rem;color:#667eea;">
+                    <i class="fas fa-user-check"></i> Submissions ({{ submissions.count }})
+                </h3>
+                <div style="overflow-x:auto;">
+                <table class="sub-table">
+                    <thead><tr>
+                        <th>#</th><th>Student</th><th>Submitted</th><th>File</th><th>Answer</th><th>Marks (&nbsp;<span id="totalLab">{{ assignment.total_marks }}</span>&nbsp;)</th><th>Feedback</th>
+                    </tr></thead>
+                    <tbody>
+                    {% for sub in submissions %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><strong>{{ sub.student.name }}</strong><br><small style="color:#94a3b8;">{{ sub.student.roll_number }}</small></td>
+                        <td>
+                            {% if sub.submitted_at %}
+                                {{ sub.submitted_at|date:"M d, H:i" }}
+                                {% if sub.is_late %}<span style="color:#ef4444;font-size:.78rem;">(LATE)</span>{% endif %}
+                            {% else %}<span style="color:#94a3b8;">—</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if sub.file %}
+                                <a href="{{ sub.file.url }}" target="_blank" style="color:#667eea;text-decoration:none;"><i class="fas fa-download"></i> Download</a>
+                            {% else %}<span class="no-file">No file</span>{% endif %}
+                        </td>
+                        <td style="max-width:220px;font-size:.85rem;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            {{ sub.text_answer|truncatechars:60|default:"—" }}
+                        </td>
+
+                        <td>
+                            <input type="number" name="marks_{{ sub.id }}" value="{{ sub.marks_obtained|default:'' }}"
+                                   style="width:70px;padding:6px 8px;border:2px solid #e2e8f0;border-radius:8px;font-weight:700;"
+                                   min="0" max="{{ assignment.total_marks }}" step="0.5">
+                        </td>
+                        <td>
+                            <input type="text" name="feedback_{{ sub.id }}" value="{{ sub.teacher_feedback|default:'' }}"
+                                   placeholder="Feedback…"
+                                   style="width:200px;padding:6px 8px;border:2px solid #e2e8f0;border-radius:8px;font-size:.85rem;">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top:16px;"><i class="fas fa-save"></i> Save All Grades</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="info-card" style="text-align:center;padding:50px;color:#94a3b8;">
+            <i class="fas fa-inbox" style="font-size:2.5rem;margin-bottom:12px;display:block;"></i>
+            <p>No submissions yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

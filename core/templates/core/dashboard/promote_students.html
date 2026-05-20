@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promote Students — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--bg:#f8fafc;}
+        .pr-wrapper{max-width:900px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{margin-bottom:24px;}
+        .page-header a{color:var(--pri);text-decoration:none;font-size:.9rem;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .form-card{background:white;border-radius:20px;padding:28px;box-shadow:0 10px 40px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .form-row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;}
+        .form-row label{font-size:.85rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;}
+        .form-row select,.form-row input{padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;font-family:inherit;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:12px 22px;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .stu-table{width:100%;border-collapse:collapse;}
+        .stu-table th{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;padding:12px;text-align:left;font-size:.85rem;}
+        .stu-table td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:.88rem;color:#374151;}
+        .stu-table tr:hover td{background:#f8fafc;}
+        .bld{font-weight:700;color:#1e293b;}
+        @media(max-width:768px){.pr-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-arrow-up"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/students-list/"><i class="fas fa-users"></i> Students</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="pr-wrapper">
+        <div class="page-header"><a href="/students-list/"><i class="fas fa-arrow-left"></i> All Students</a><h1><i class="fas fa-graduation-cap"></i> Promote Students</h1></div>
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;color:{# if m.tags=='error'}#dc2626{% else %}#16a34a{% endif %};background:{# if m.tags=='error'}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+        <div class="form-card">
+            <h3><i class="fas fa-sliders-h"></i> Promotion Settings</h3>
+            <form method="post">{% csrf_token %}
+                <div class="form-row">
+                    <div><label>Promote To Class</label><input type="text" name="promoted_to_class" placeholder="e.g. 11, S2, Semester 2" required></div>
+                    <div><label>Academic Year</label>
+                        <select name="academic_year">
+                            <option value="">— No year (optional) —</option>
+                            {% for yr in academic_years %}
+                            <option value="{{ yr.id }}">{{ yr.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-arrow-up"></i> Promote Selected</button>
+                </div>
+            </form>
+        </div>
+        <div class="form-card" style="padding:0;">
+            <form method="post">{% csrf_token %}
+            <table class="stu-table">
+                <thead><tr><th><input type="checkbox" id="chkAll" style="accent-color:#667eea;"></th><th>Name</th><th>Current Class</th><th>Section</th><th>Roll No.</th><th>Level</th></tr></thead>
+                <tbody>
+                {% for s in students %}
+                <tr>
+                    <td><input type="checkbox" name="student_ids" value="{{ s.id }}" class="stuChk"></td>
+                    <td class="bld">{{ s.name }}</td>
+                    <td>{{ s.student_class }}</td>
+                    <td>{{ s.section }}</td>
+                    <td>{{ s.roll_number|default:"—" }}</td>
+                    <td>{{ s.get_level_display }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center;padding:30px;color:#94a3b8;">No students found.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.getElementById('chkAll').addEventListener('change',function(){document.querySelectorAll('.stuChk').forEach(c=>c.checked=this.checked);});
+    </script>
+</body>
+</html>

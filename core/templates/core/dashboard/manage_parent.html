@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Info — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--bg:#f8fafc;}
+        .mp-wrapper{max-width:700px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{margin-bottom:24px;}
+        .page-header a{color:var(--pri);text-decoration:none;font-size:.9rem;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .form-card{background:white;border-radius:20px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.1);border:1px solid #e2e8f0;}
+        .form-card h2{margin-top:0;color:#1e293b;margin-bottom:4px;}
+        .stu-meta{font-size:.88rem;color:#64748b;margin-bottom:24px;}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+        .form-row.full{grid-template-columns:1fr;}
+        .form-row label{font-size:.85rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;}
+        .form-row input,.form-row textarea{width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;font-family:inherit;}
+        .form-row input:focus,.form-row textarea:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(102,126,234,.1);}
+        .form-row textarea{min-height:90px;}
+        .form-actions{margin-top:24px;display:flex;gap:12px;}
+        @media(max-width:768px){.mp-wrapper{padding:15px;}.form-row{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-address-book"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/students-list/"><i class="fas fa-users"></i> Students</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="mp-wrapper">
+        <div class="page-header">
+            <a href="/students-list/"><i class="fas fa-arrow-left"></i> Back to Students</a>
+            <h1><i class="fas fa-address-book"></i> Parent / Guardian Info</h1>
+        </div>
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;color:{# if m.tags=='error'}#dc2626{% else %}#16a34a{% endif %};background:{# if m.tags=='error'}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+        <div class="form-card">
+            <h2>{% if parent %}Edit{% else %}Add{% endif %} Parent / Guardian Details</h2>
+            <div class="stu-meta">Student: <strong>{{ student.name }}</strong> · Class: {{ student.student_class }} {{ student.section }}</div>
+            <form method="post">{% csrf_token %}
+                <input type="hidden" name="student_id" value="{{ student.id }}">
+                <div class="form-row">
+                    <div><label>Father's Name</label><input type="text" name="father_name" value="{{ parent.father_name|default:'' }}"></div>
+                    <div><label>Mother's Name</label><input type="text" name="mother_name" value="{{ parent.mother_name|default:'' }}"></div>
+                </div>
+                <div class="form-row">
+                    <div><label>Guardian Name (primary contact)</label><input type="text" name="guardian_name" value="{{ parent.guardian_name|default:'' }}"></div>
+                    <div><label>Phone</label><input type="tel" name="phone" value="{{ parent.phone|default:'' }}"></div>
+                </div>
+                <div class="form-row">
+                    <div><label>Email</label><input type="email" name="email" value="{{ parent.email|default:'' }}"></div>
+                    <div><label>Relation</label>
+                        <select name="relation">
+                            <option value="Father" {% if parent.relation == 'Father' %}selected{% endif %}>Father</option>
+                            <option value="Mother" {% if parent.relation == 'Mother' %}selected{% endif %}>Mother</option>
+                            <option value="Guardian" {% if parent.relation == 'Guardian' %}selected{% endif %}>Guardian</option>
+                            <option value="Grandparent" {% if parent.relation == 'Grandparent' %}selected{% endif %}>Grandparent</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row full">
+                    <label>Address</label>
+                    <textarea name="address">{{ parent.address|default:'' }}</textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Parent Info</button>
+                    <a href="/students-list/" class="btn" style="background:#f1f5f9;color:#374151;">Cancel</a>
+                </div>
+            </form>
+        </div>
+        <!-- A11 — Parent Portal Account -->
+        {% if student and not parent %}
+        <!-- No parent record yet -->
+        {% elif parent and not has_parent_user_account %}
+        <div class="form-card mt-4" style="border-color: #ddd;">
+            <h2><i class="fas fa-user-shield"></i> Parent Portal Account</h2>
+            <p class="stu-meta">
+                Create a portal login for the parent/guardian so they can view their
+                ward's results, fees, and attendance. Default password: <code>password123</code>.
+                They will need to verify via a token sent separately.
+            </p>
+            <div class="form-actions">
+                <button type="submit" name="create_parent_user" value="1"
+                        class="btn btn-success">
+                    <i class="fas fa-user-plus"></i> Create Portal Account
+                </button>
+            </div>
+        </div>
+        {% endif %}
+        <!-- Show existing portal account -->
+        {% if parent and has_parent_user_account %}
+        <div class="form-card mt-4" style="border-color: #ddd;">
+            <h2><i class="fas fa-user-check"></i> Parent Portal Account</h2>
+            <p class="stu-meta">
+                Portal account <strong>{{ parent.user_account.user.username }}</strong>
+                {% if parent.user_account.is_verified %}
+                — <span class="badge bg-success">Verified</span>
+                {% else %}
+                — <span class="badge bg-warning">Pending verification</span>
+                {% endif %}
+            </p>
+            <div class="form-actions">
+                <a href="{% url 'core:parent_portal' %}"
+                   class="btn btn-primary">
+                    <i class="fas fa-external-link-alt"></i> View Parent Portal
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

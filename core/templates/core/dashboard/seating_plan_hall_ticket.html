@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hall Ticket — {{ student.name }} — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/icons.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--bg:#f8fafc;}
+        body{background:#f8fafc;font-family:'Segoe UI',sans-serif;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:30px 10px;}
+        .ticket{background:white;border-radius:20px;width:420px;max-width:100%;box-shadow:0 10px 40px rgba(0,0,0,.15);overflow:hidden;border:2px solid #e2e8f0;}
+        .ticket-header{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;padding:22px 24px;text-align:center;}
+        .ticket-header h2{margin:0 0 4px;font-size:1.1rem;font-weight:700;}
+        .ticket-header p{margin:0;opacity:.85;font-size:.78rem;}
+        .ticket-body{padding:24px;}
+        .qr-section{text-align:center;margin-bottom:20px;}
+        .qr-code{width:120px;height:120px;border:3px solid #e2e8f0;border-radius:10px;image-rendering:pixelated;}
+        .ticket-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f1f5f9;}
+        .ticket-row:last-child{border-bottom:none;}
+        .ticket-label{font-size:.76rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;}
+        .ticket-value{font-size:.88rem;font-weight:600;color:#1e293b;text-align:right;}
+        .ticket-value b+br{display:block;}
+        .student-name-ticket{font-size:1.15rem;font-weight:800;color:var(--pri);}
+        .seat-highlight{background:#dbeafe;color:#1e40af;padding:3px 12px;border-radius:8px;font-weight:700;font-size:.95rem;}
+        .ticket-footer{padding:14px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;}
+        .ticket-footer p{margin:4px 0;font-size:.72rem;color:#94a3b8;line-height:1.6;}
+        .print-btn{display:block;text-align:center;padding:10px;background:var(--ok);color:white;border-radius:10px;margin:20px auto 0;cursor:pointer;font-weight:700;width:100%;border:none;font-size:.9rem;}
+        @media print{
+            body{background:white;}
+            .ticket{box-shadow:none;border:none;page-break-inside:avoid;}
+            .print-btn{display:none;}
+        }
+    </style>
+</head>
+<body>
+    <div style="width:100%;max-width:460px;">
+        <button class="print-btn" onclick="window.print()"><i class="fas fa-print"></i> Print Hall Ticket</button>
+
+        <div class="ticket">
+            <div class="ticket-header">
+                <h2>🎓 HALL TICKET</h2>
+                <p>{{ plan.exam.title }} — {{ plan.exam.subject.name }}</p>
+            </div>
+            <div class="ticket-body">
+                <!-- QR Code -->
+                <div class="qr-section">
+                    {% if qr_code %}
+                    <img src="data:image/png;base64,{{ qr_code }}" class="qr-code" alt="QR Code">
+                    {% endif %}
+                </div>
+
+                <!-- Student Info -->
+                <div class="ticket-row">
+                    <span class="ticket-label">Student</span>
+                    <span class="ticket-value student-name-ticket">{{ student.name }}</span>
+                </div>
+                <div class="ticket-row">
+                    <span class="ticket-label">Roll Number</span>
+                    <span class="ticket-value">{{ student.roll_number }}</span>
+                </div>
+                <div class="ticket-row">
+                    <span class="ticket-label">Class / Section</span>
+                    <span class="ticket-value">{{ plan.exam.target_class }}{% if plan.exam.target_section %} {{ plan.exam.target_section }}{% endif %}</span>
+                </div>
+
+                <!-- Exam Info -->
+                <div class="ticket-row">
+                    <span class="ticket-label">Exam</span>
+                    <span class="ticket-value">{{ plan.exam.title }}</span>
+                </div>
+                <div class="ticket-row">
+                    <span class="ticket-label">Subject</span>
+                    <span class="ticket-value">{{ plan.exam.subject.name }}</span>
+                </div>
+                <div class="ticket-row">
+                    <span class="ticket-label">Date</span>
+                    <span class="ticket-value">{{ plan.exam.exam_date|date:"d M Y, l" }}</span>
+                </div>
+                <div class="ticket-row">
+                    <span class="ticket-label">Time</span>
+                    <span class="ticket-value">{{ plan.exam.start_time|default:"TBD" }} — {{ plan.exam.end_time|default:"TBD" }}</span>
+                </div>
+                <div class="ticket-row">
+                    <span class="ticket-label">Duration</span>
+                    <span class="ticket-value">{{ plan.exam.duration_minutes }} minutes</span>
+                </div>
+                <div class="ticket-row">
+                    <span class="ticket-label">Marks</span>
+                    <span class="ticket-value">{{ plan.exam.total_marks }} (Pass: {{ plan.exam.passing_marks }})</span>
+                </div>
+                <div class="ticket-row">
+                    <span class="ticket-label">Venue</span>
+                    <span class="ticket-value">{{ plan.exam.venue|default:"N/A" }}</span>
+                </div>
+
+                <!-- Seat Info -->
+                <div class="ticket-row" style="background:#f0f9ff;margin:12px -24px;padding:12px 24px;border-left:4px solid var(--pri);">
+                    <span class="ticket-label">Seat Number</span>
+                    <span class="ticket-value">
+                        {% if seat %}
+                        <span class="seat-highlight">{{ seat.seat_number }}</span>
+                        <span style="font-size:.72rem;color:#94a3b8;display:block;margin-top:2px;">Row {{ seat.row }} · Col {{ seat.column }}</span>
+                        {% else %}
+                        TBD
+                        {% endif %}
+                    </span>
+                </div>
+
+                <!-- Signatures -->
+                <div style="display:flex;justify-content:space-between;margin-top:18px;font-size:.75rem;color:#94a3b8;">
+                    <span>Candidate's Signature: _____________________</span>
+                    <span>Invigilator's Signature: _____________________</span>
+                </div>
+            </div>
+            <div class="ticket-footer">
+                <p><i class="fas fa-info-circle"></i> Bring this hall ticket with valid ID to the exam hall.</p>
+                <p>Report 30 min before the exam starts.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

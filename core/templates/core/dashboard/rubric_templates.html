@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rubric Templates — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--bg:#f8fafc;}
+        .rt-wrapper{max-width:1100px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{margin-bottom:28px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .section-title{font-size:1.1rem;color:#1e293b;font-weight:700;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #e2e8f0;}
+        .tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:32px;}
+        .tpl-card{background:white;border-radius:14px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e2e8f0;transition:.3s;}
+        .tpl-card:hover{border-color:var(--pri);transform:translateY(-2px);}
+        .tpl-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;margin-bottom:10px;}
+        .badge-global{background:#dbeafe;color:#1e40af;}
+        .badge-local{background:#f1f5f9;color:#64748b;}
+        .tpl-card h4{margin:0 0 8px;font-size:1rem;color:#1e293b;}
+        .tpl-card p{margin:0 0 14px;font-size:.82rem;color:#64748b;line-height:1.5;}
+        .criteria-preview{margin:10px 0 14px;padding:10px;background:#f8fafc;border-radius:8px;}
+        .criteria-preview .cp-item{font-size:.78rem;color:#374151;padding:2px 0;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:10px;font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-sm{padding:6px 12px;font-size:.78rem;}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-clipboard-check"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/rubrics/"><i class="fas fa-tasks"></i> Rubrics</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="rt-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-clipboard-check"></i> Rubric Templates</h1>
+        </div>
+
+        <h2 class="section-title"><i class="fas fa-globe" style="color:var(--pri);"></i> Global Templates</h2>
+        {% if global_templates %}
+        <div class="tpl-grid">
+            {% for tpl in global_templates %}
+            <div class="tpl-card">
+                <div class="tpl-badge badge-global"><i class="fas fa-globe"></i> Global</div>
+                <h4>{{ tpl.name }}</h4>
+                <div class="criteria-preview">
+                    {% for crit in tpl.criteria_data %}
+                    <div class="cp-item">{{ forloop.counter }}. {{ crit.name }} &nbsp;(max: {{ crit.max_score }}, {{ crit.weight_percent }}%)</div>
+                    {% empty %}
+                    <p style="font-size:.78rem;color:#94a3b8;">No criteria</p>
+                    {% endfor %}
+                </div>
+                <span class="btn btn-primary btn-sm"><i class="fas fa-upload"></i> Import Template</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:#94a3b8;font-size:.88rem;margin-bottom:32px;">No global templates available.</p>
+        {% endif %}
+
+        <h2 class="section-title"><i class="fas fa-list" style="color:var(--pri);"></i> My Templates</h2>
+        {% if my_templates %}
+        <div class="tpl-grid">
+            {% for tpl in my_templates %}
+            <div class="tpl-card">
+                <div class="tpl-badge badge-local"><i class="fas fa-user"></i> Custom</div>
+                <h4>{{ tpl.name }}</h4>
+                <p style="font-size:.78rem;">Created {{ tpl.created_at|date:'M d, Y' }}</p>
+                <div class="criteria-preview">
+                    {% for crit in tpl.criteria_data %}
+                    <div class="cp-item">{{ forloop.counter }}. {{ crit.name }} &nbsp;(max: {{ crit.max_score }}, {{ crit.weight_percent }}%)</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:#94a3b8;font-size:.88rem;">You haven't saved any personal templates yet. Import a global template to get started.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

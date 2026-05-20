@@ -1,0 +1,58 @@
+{% extends 'core/dashboard/dashboard.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>⏱ Scheduled Tasks</h1>
+    <p class="dashboard-subtitle">Queued background tasks — reminders, digests, fee alerts, and more</p>
+  </div>
+
+  <div style="margin-bottom:24px;display:flex;gap:12px;align-items:center;">
+    <a href="{% url 'core:trigger_weekly_digest' %}" class="btn btn-primary">
+      <i class="fas fa-bell"></i> Queue Weekly Digest
+    </a>
+    <a href="{% url 'core:trigger_monthly_report' %}" class="btn btn-secondary">
+      <i class="fas fa-calendar-alt"></i> Queue Monthly Report
+    </a>
+  </div>
+
+  {% if tasks %}
+  <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;overflow:hidden;">
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem;">
+      <thead>
+        <tr style="background:var(--accent-gradient);color:#fff;">
+          <th style="padding:12px 16px;text-align:left;">Type</th>
+          <th style="padding:12px 16px;text-align:left;">Payload</th>
+          <th style="padding:12px 16px;text-align:left;">Scheduled For</th>
+          <th style="padding:12px 16px;text-align:center;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tasks %}
+        <tr style="border-top:1px solid var(--card-border);">
+          <td style="padding:10px 16px;">{{ t.get_task_type_display }}</td>
+          <td style="padding:10px 16px;font-family:monospace;font-size:.78rem;">
+            <pre style="margin:0;white-space:pre-wrap;word-break:break-all;font-family:monospace;">{{ t.payload }}</pre>
+          </td>
+          <td style="padding:10px 16px;">{{ t.scheduled_for|date:"Y-m-d H:i" }}</td>
+          <td style="padding:10px 16px;text-align:center;">
+            {% if t.is_executed %}
+              <span style="color:#166534;font-weight:600;">Done</span>
+            {% else %}
+              <span style="color:#854d0e;font-weight:600;">Queued</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:48px;color:var(--text-secondary);">
+    <i class="fas fa-inbox" style="font-size:3rem;margin-bottom:16px;display:block;opacity:.4;"></i>
+    <p>No queued tasks.</p>
+    <p style="font-size:.88rem;">Trigger weekly/monthly digests above to schedule tasks.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

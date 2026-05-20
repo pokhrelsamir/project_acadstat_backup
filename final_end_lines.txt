@@ -1,0 +1,64 @@
+ 802: "                let type = 'success';\n"
+ 803: "                if (msg.classList.contains('warning-box')) type = 'warning';\n"
+ 804: "                else if (msg.classList.contains('error-banner')) type = 'error';\n"
+ 805: "                else if (msg.classList.contains('success-message')) type = 'success';\n"
+ 806: '                \n'
+ 807: '                // Clean up message text\n'
+ 808: "                text = text.replace(/^Success[!:\\s]*/i, '');\n"
+ 809: "                text = text.replace(/^⚠️\\s*/, '');\n"
+ 810: '                \n'
+ 811: '                if (text) showToast(text, type);\n'
+ 812: '            });\n'
+ 813: '\n'
+ 814: '            // Form submission\n'
+ 815: '            if (uploadForm) {\n'
+ 816: "                uploadForm.addEventListener('submit', function(e) {\n"
+ 817: '                    e.preventDefault();\n'
+ 818: '                    \n'
+ 819: '                    const formData = new FormData(this);\n'
+ 820: "                    const submitBtn = document.getElementById('submitBtn');\n"
+ 821: '                    \n'
+ 822: '                    submitBtn.disabled = true;\n'
+ 823: '                    submitBtn.innerHTML = \'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="animate-spin" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Uploading...\';\n'
+ 824: '                    \n'
+ 825: '                    // Add CSS animation for spinner if not present\n'
+ 826: "                    if (!document.getElementById('spin-style')) {\n"
+ 827: "                        const style = document.createElement('style');\n"
+ 828: "                        style.id = 'spin-style';\n"
+ 829: "                        style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';\n"
+ 830: '                        document.head.appendChild(style);\n'
+ 831: '                    }\n'
+ 832: '                    \n'
+ 833: '                    fetch(\'{% url "core:upload_marks_excel" %}\', {\n'
+ 834: "                        method: 'POST',\n"
+ 835: '                        body: formData,\n'
+ 836: '                        headers: {\n'
+ 837: "                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value\n"
+ 838: '                        }\n'
+ 839: '                    })\n'
+ 840: '                    .then(response => {\n'
+ 841: '                        if (response.ok) {\n'
+ 842: '                            // Reload page to reflect changes and show messages\n'
+ 843: '                            window.location.reload();\n'
+ 844: '                        } else {\n'
+ 845: '                            return response.text().then(text => {\n'
+ 846: "                                console.error('Server error:', text);\n"
+ 847: "                                throw new Error('Upload failed');\n"
+ 848: '                            });\n'
+ 849: '                        }\n'
+ 850: '                    })\n'
+ 851: '                    .catch(error => {\n'
+ 852: "                        console.error('Error:', error);\n"
+ 853: "                        showToast('Upload failed! Please check your file format.', 'error');\n"
+ 854: '                        submitBtn.disabled = false;\n'
+ 855: '                        submitBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">\n'
+ 856: '                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>\n'
+ 857: '                            <polyline points="7 10 12 15 17 10"/>\n'
+ 858: '                            <line x1="12" y1="15" x2="12" y2="3"/>\n'
+ 859: '                        </svg> Upload Marks`;\n'
+ 860: '                    });\n'
+ 861: '                });\n'
+ 862: '            });\n'
+ 863: '    </script>\n'
+ 864: '  </body>\n'
+ 865: '</html>\n'

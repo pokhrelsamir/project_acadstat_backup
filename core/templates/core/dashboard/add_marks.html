@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Marks - Academic System</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const theme = savedTheme || 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-color: #667eea;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            max-width: 100%;
+        }
+
+        .page-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .form-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--border-color);
+            animation: slideUp 0.4s ease-out;
+            box-sizing: border-box;
+            overflow: visible;
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .form-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.2rem;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .form-icon svg { color: white; }
+        .form-header h2 { font-size: 1.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+        .form-header p { color: var(--text-secondary); font-size: 0.95rem; }
+
+        .student-info-header {
+            text-align: center;
+        }
+
+        .student-image-container {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 auto 1.2rem;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .student-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .student-image-container svg {
+            color: #667eea;
+        }
+
+        .student-image-container.has-image {
+            border-color: var(--success-color);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            .form-card {
+                padding: 1.5rem;
+                border-radius: 16px;
+            }
+        }
+
+        .terminal-select {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .terminal-select label {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .terminal-select .terminal-label-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .terminal-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .terminal-options { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+        }
+
+        @media (max-width: 480px) {
+            .terminal-options { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        }
+
+        .terminal-option { position: relative; }
+        .terminal-option input { position: absolute; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+        .terminal-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.2rem 0.75rem;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 0;
+            width: 100%;
+            box-sizing: border-box;
+            min-height: 90px;
+        }
+
+        .terminal-option label:hover { 
+            border-color: #667eea; 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+        }
+
+        .terminal-option label:active {
+            transform: translateY(0);
+        }
+
+        .terminal-option input:checked + label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .terminal-option input:checked + label .terminal-emoji {
+            transform: scale(1.1);
+        }
+
+        .terminal-option .terminal-emoji { 
+            font-size: 1.75rem; 
+            margin-bottom: 0.4rem;
+            transition: transform 0.25s ease;
+        }
+        
+        .terminal-option .terminal-label-text { 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        
+        .terminal-option .terminal-sublabel {
+            font-size: 0.7rem;
+            opacity: 0.75;
+            margin-top: 0.2rem;
+        }
+
+        .modern-form .form-group {
+            margin-bottom: 1.5rem;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modern-form label {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.6rem;
+            font-size: 0.95rem;
+        }
+
+        .modern-form label svg { color: #667eea; flex-shrink: 0; }
+
+        .modern-form input,
+        .modern-form select {
+            width: 100% !important;
+            padding: 0.9rem 1.2rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .modern-form input:focus,
+        .modern-form select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+        }
+
+        .modern-form input.error,
+        .modern-form select.error {
+            border-color: var(--error-color);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+
+        .error-text {
+            color: var(--error-color);
+            font-size: 0.85rem;
+            margin-top: 0.4rem;
+            display: none;
+        }
+
+        .error-text.visible {
+            display: block;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.2rem;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: fit-content;
+        }
+        .back-btn:hover { border-color: #667eea; transform: translateX(-5px); }
+
+        .marks-table-container {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+        }
+
+        .marks-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 500px;
+        }
+
+        .marks-table thead {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .marks-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .marks-table th:first-child {
+            border-top-left-radius: 10px;
+        }
+
+        .marks-table th:last-child {
+            border-top-right-radius: 10px;
+        }
+
+        .marks-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .marks-table tbody tr {
+            background: var(--bg-card);
+            transition: background 0.2s ease;
+        }
+
+        .marks-table tbody tr:hover {
+            background: var(--input-bg);
+        }
+
+        .marks-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .subject-select {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .subject-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .marks-input {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            transition: all 0.3s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        /* Style for dropdown options (where supported) */
+        .marks-input option {
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+        }
+
+        .marks-input:read-only,
+        .marks-input[readonly] {
+            background: var(--input-bg);
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .marks-input:focus,
+        .marks-input:not([readonly]):focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        /* Select2 dropdown styling to match theme */
+        .select2-container--default .select2-selection--single {
+            background-color: var(--input-bg) !important;
+            border: 2px solid var(--border-color) !important;
+            border-radius: 12px !important;
+            height: 50px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: var(--text-primary) !important;
+            padding-left: 15px !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            display: none !important;
+        }
+
+        .select2-dropdown {
+            background-color: var(--bg-card) !important;
+            border: 2px solid #667eea !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .select2-results__option {
+            background-color: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            padding: 12px 15px !important;
+        }
+
+        .select2-results__option--highlighted[aria-selected] {
+            background-color: #667eea !important;
+            color: white !important;
+        }
+
+        .select2-search__field {
+            background-color: var(--input-bg) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+
+        .marks-input.error {
+            border-color: var(--error-color);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+
+        .marks-input.valid {
+            border-color: var(--success-color);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+
+        .total-cell {
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .delete-btn {
+            background: transparent;
+            border: none;
+            color: var(--error-color);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .add-row-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0.9rem 1.5rem;
+            background: var(--bg-card);
+            border: 2px dashed rgba(102, 126, 234, 0.4);
+            border-radius: 12px;
+            color: #667eea;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            margin-top: 1rem;
+            box-sizing: border-box;
+        }
+
+        .add-row-btn:hover {
+            border-style: solid;
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .add-row-btn:active {
+            transform: translateY(0);
+        }
+
+        .add-row-btn svg {
+            transition: transform 0.3s ease;
+        }
+
+        .add-row-btn:hover svg {
+            transform: rotate(90deg);
+        }
+
+        .grand-total-card {
+            background: var(--primary-gradient);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .grand-total-label {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .grand-total-value {
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        @media (max-width: 600px) {
+            .grand-total-card {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+                padding: 1.25rem;
+            }
+            .grand-total-value {
+                font-size: 1.75rem;
+            }
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .btn-primary, .btn-secondary {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            border: 2px solid transparent;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .btn-calculate {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-calculate:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .success-message {
+            background: rgba(16, 185, 129, 0.15);
+            border: 2px solid var(--success-color);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--success-color);
+            font-weight: 500;
+        }
+
+        .error-banner {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--error-color);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--error-color);
+        }
+
+        /* Select2 Overrides */
+        .select2-container--open .select2-dropdown {
+            background-color: var(--bg-card) !important;
+            border: 2px solid #667eea !important;
+            border-radius: 12px !important;
+            z-index: 99999;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .select2-results__option {
+            background-color: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+            padding: 12px 15px !important;
+        }
+
+        .select2-results__option--highlighted[aria-selected] {
+            background-color: #667eea !important;
+            color: white !important;
+        }
+
+        .select2-container--default .select2-selection--single {
+            background-color: var(--input-bg) !important;
+            border: 2px solid var(--border-color) !important;
+            border-radius: 12px !important;
+            height: 50px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: var(--text-primary) !important;
+            padding-left: 15px !important;
+        }
+
+        .select2-selection__arrow {
+            display: none !important;
+        }
+
+        .table-row-new {
+            animation: rowFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes rowFadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-15px);
+                background: rgba(102, 126, 234, 0.1);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0);
+                background: transparent;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <h2 class="logo">🎓 AcadStat</h2>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            {% if user.is_authenticated %}
+                <a href="/dashboard/">Dashboard</a>
+                <a href="/logout/">Logout</a>
+            {% else %}
+                <a href="/login/">Login</a>
+            {% endif %}
+            
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+                <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-wrapper">
+            <a href="/dashboard/" class="back-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back to Dashboard
+            </a>
+
+            <div class="form-card">
+                <div class="form-header">
+                    <div class="student-info-header">
+                        <div class="student-image-container" id="studentImageContainer">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <h2>Add Student Marks</h2>
+                        <p id="selectedStudentName">Select a student to begin</p>
+                    </div>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if message.tags == 'success' %}
+                        <div class="success-message">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                            {{ message }}
+                        </div>
+                        {% else %}
+                        <div class="error-banner">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            {{ message }}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST" class="modern-form" id="marksForm">
+                    {% csrf_token %}
+                    
+                    <!-- Level & Class/Semester Filter (for teachers) -->
+                    {% if is_teacher %}
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="levelSelect">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                </svg>
+                                Education Level
+                            </label>
+                            <select id="levelSelect" class="marks-input">
+                                <option value="">Select Level</option>
+                                {% for level in available_levels %}
+                                <option value="{{ level.value }}">{{ level.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="classSemesterSelect" id="classLabel">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                <span id="classSemesterLabelText">Class</span>
+                            </label>
+                            <select id="classSemesterSelect" class="marks-input" disabled>
+                                <option value="">Select Class</option>
+                            </select>
+                            <small id="levelHint" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.4rem; display: block;">
+                                Select level first, then choose class/semester
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-row" style="margin-top: 1.5rem;">
+                        <div class="form-group" style="{% if is_teacher %}flex: 2;{% else %}flex: 1;{% endif %}">
+                            <label for="id_student">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                Student
+                            </label>
+                            {{ form.student }}
+                            <span class="error-text" id="student-error">Please select a student</span>
+                        </div>
+
+                        <div class="form-group" style="{% if is_teacher %}flex: 1;{% else %}flex: 1;{% endif %}">
+                            <label for="id_terminal">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                    <line x1="16" y1="2" x2="16" y2="6"/>
+                                    <line x1="8" y1="2" x2="8" y2="6"/>
+                                    <line x1="3" y1="10" x2="21" y2="10"/>
+                                </svg>
+                                Terminal/Exam
+                            </label>
+                            {{ form.terminal }}
+                        </div>
+                    </div>
+
+                    <div class="marks-entry-section" style="background: var(--input-bg); border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; border: 2px solid var(--border-color);">
+                        <h3 style="margin-top: 0; margin-bottom: 1rem; color: var(--text-primary); font-size: 1.1rem;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            Add Marks for Subject
+                        </h3>
+                        <div id="addMarksError" class="error-banner" style="display: none; margin-bottom: 1rem;"></div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Subject</label>
+                                <select id="subjectSelect" class="marks-input">
+                                    <option value="">Select Subject</option>
+                                    {% for s in subject_options %}
+                                    <option value="{{ s.id }}">{{ s.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <span class="error-text" id="error-subjectSelect"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>Marks Obtained</label>
+                                <input type="number" id="marksObtained" class="marks-input" placeholder="Enter marks" min="0" step="0.01">
+                                <span class="error-text" id="error-marksObtained"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>Total Marks</label>
+                                <input type="number" id="totalMarks" class="marks-input" value="100" min="1" step="0.01"
+                                    {% if is_teacher %}readonly{% endif %}>
+                                <span class="error-text" id="error-totalMarks"></span>
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: flex-end;">
+                                <button type="button" id="addBtn" class="btn-primary" onclick="addSubjectMarks()" style="width: 100%; padding: 0.9rem;">
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                        <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
+                            <strong>Note:</strong> Click on any mark entry in the table below to edit it. Click Add to update.
+                        </div>
+                    </div>
+
+                    <div class="added-marks-list" id="addedMarksList" style="margin-top: 1.5rem;">
+                        <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Added Marks</h3>
+                        <div id="marksListContent">
+                            <table class="marks-table" id="marksTable" style="display: none; width: 100%; border-collapse: collapse; min-width: 400px;">
+                                <thead>
+                                    <tr style="background: var(--primary-gradient); color: white;">
+                                        <th style="padding: 0.75rem; text-align: left;">#</th>
+                                        <th style="padding: 0.75rem; text-align: left;">Subject</th>
+                                        <th style="padding: 0.75rem; text-align: center;">Marks</th>
+                                        <th style="padding: 0.75rem; text-align: center;">Total</th>
+                                        <th style="padding: 0.75rem; text-align: center;">%</th>
+                                        <th style="padding: 0.75rem; text-align: center;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="marksTableBody"></tbody>
+                            </table>
+                            <p id="emptyMarksMsg" style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 1rem;">No marks added yet. Select a subject above and click Add.</p>
+                        </div>
+                    </div>
+
+                    <div class="grand-total-card" id="grandTotalCard" style="display: none;">
+                        <span class="grand-total-label">Grand Total</span>
+                        <span class="grand-total-value" id="grandTotalValue">0 / 0</span>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="clearAllMarks()" style="background: var(--error-color);">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                            Clear All
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                <polyline points="17 21 17 13 7 13 7 21"/>
+                                <polyline points="7 3 7 8 15 8"/>
+                            </svg>
+                            Save All Marks
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rowCount = 0;
+        let editingMarkId = null;
+        const subjectOptions = {{ subject_options|safe }};
+        const subjectTotalMap = {{ subject_total_map_json|safe }};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const html = document.documentElement;
+            
+            updateThemeIcon(html.getAttribute('data-theme'));
+            
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+            });
+
+            for (let i = 0; i < 3; i++) {
+                addNewRow();
+            }
+        });
+
+        function updateThemeIcon(theme) {
+            const themeToggle = document.getElementById('themeToggle');
+            if (!themeToggle) return;
+            const sunIcon = themeToggle.querySelector('.sun-icon');
+            const moonIcon = themeToggle.querySelector('.moon-icon');
+            if (theme === 'dark') {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            } else {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            }
+        }
+
+        function addNewRow() {
+            rowCount++;
+            const tbody = document.getElementById('marksTableBody');
+            const defaultTotal = 100;
+            
+            const row = document.createElement('tr');
+            row.className = 'table-row-new';
+            row.id = `row-${rowCount}`;
+            row.innerHTML = `
+                <td>
+                    <select name="subjects" class="subject-select" data-row="${rowCount}" onchange="validateRow(${rowCount})">
+                        <option value="">Select Subject</option>
+                        ${subjectOptions.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" name="marks_obtained" class="marks-input" data-row="${rowCount}" 
+                        placeholder="0" min="0" step="0.01" oninput="validateMarksInput(this, ${rowCount})" onblur="calculateRowPercentage(${rowCount})">
+                </td>
+                <td>
+                    <input type="number" name="total_marks" class="marks-input" data-row="${rowCount}" 
+                        value="${defaultTotal}" min="1" step="0.01" 
+                        oninput="validateMarksInput(this, ${rowCount})" onblur="calculateRowPercentage(${rowCount})"
+                        {% if is_teacher %}readonly{% endif %}>
+                </td>
+                <td>
+                    <span class="total-cell" id="percentage-${rowCount}">-</span>
+                </td>
+                <td>
+                    <button type="button" class="delete-btn" onclick="deleteRow(${rowCount})" title="Delete row">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            setTimeout(() => row.classList.remove('table-row-new'), 300);
+
+            const totalInputs = tbody.querySelectorAll('input[name="total_marks"]');
+            totalInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    calculateRowPercentage(this.closest('tr').id.split('-')[1]);
+                });
+            });
+        }
+
+        function deleteRow(rowId) {
+            const tbody = document.getElementById('marksTableBody');
+            if (tbody.children.length > 1) {
+                const row = document.getElementById(`row-${rowId}`);
+                row.style.animation = 'rowFadeIn 0.2s ease-out reverse';
+                setTimeout(() => {
+                    row.remove();
+                    calculateGrandTotal();
+                }, 200);
+            }
+        }
+
+        
+        function validateMarksInput(input, rowId) {
+            const value = parseFloat(input.value);
+            const row = input.closest('tr');
+            const marksObtained = row.querySelector('input[name="marks_obtained"]');
+            const totalMarks = row.querySelector('input[name="total_marks"]');
+
+            input.classList.remove('error', 'valid');
+
+            if (input.value === '') {
+                return;
+            }
+
+            if (isNaN(value)) {
+                input.classList.add('error');
+                return false;
+            }
+
+            if (marksObtained && totalMarks && marksObtained.value && totalMarks.value) {
+                const obtained = parseFloat(marksObtained.value);
+                const total = parseFloat(totalMarks.value);
+                if (!isNaN(obtained) && !isNaN(total) && obtained <= total) {
+                    marksObtained.classList.remove('error');
+                    marksObtained.classList.add('valid');
+                }
+            }
+
+            calculateRowPercentage(rowId);
+            return true;
+        }
+
+        function validateRow(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            if (!row) return;
+            const subject = row.querySelector('.subject-select');
+            
+            subject.classList.remove('error', 'valid');
+            
+            if (subject.value) {
+                subject.classList.add('valid');
+            }
+        }
+
+        function calculateRowPercentage(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            if (!row) return;
+
+            const marksObtained = parseFloat(row.querySelector('input[name="marks_obtained"]').value) || 0;
+            const totalMarks = parseFloat(row.querySelector('input[name="total_marks"]').value) || 0;
+            const percentageSpan = document.getElementById(`percentage-${rowId}`);
+
+            if (totalMarks > 0 && marksObtained >= 0) {
+                const percentage = ((marksObtained / totalMarks) * 100).toFixed(1);
+                percentageSpan.textContent = `${percentage}%`;
+            } else {
+                percentageSpan.textContent = '-';
+            }
+
+            calculateGrandTotal();
+        }
+
+        function calculateGrandTotal() {
+            const tbody = document.getElementById('marksTableBody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('tr');
+            
+            let totalObtained = 0;
+            let totalMarks = 0;
+
+            rows.forEach(row => {
+                const subject = row.querySelector('.subject-select');
+                const obtained = parseFloat(row.querySelector('input[name="marks_obtained"]').value) || 0;
+                const total = parseFloat(row.querySelector('input[name="total_marks"]').value) || 0;
+                
+                if (subject && subject.value) {
+                    totalObtained += obtained;
+                    totalMarks += total;
+                }
+            });
+
+            const grandTotalCard = document.getElementById('grandTotalCard');
+            const grandTotalValue = document.getElementById('grandTotalValue');
+            
+            if (grandTotalCard && grandTotalValue && totalMarks > 0) {
+                grandTotalCard.style.display = 'flex';
+                grandTotalValue.textContent = `${totalObtained} / ${totalMarks}`;
+            } else if (grandTotalCard) {
+                grandTotalCard.style.display = 'none';
+            }
+        }
+
+        function calculateTotal() {
+            const tbody = document.getElementById('marksTableBody');
+            if (!tbody) return;
+            const rows = tbody.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const rowId = row.id.split('-')[1];
+                if (rowId) calculateRowPercentage(rowId);
+            });
+         }
+
+        let addedMarks = [];
+        let marksIdCounter = 0;
+
+        function getElement(id) {
+            return document.getElementById(id);
+        }
+
+        function addSubjectMarks() {
+            const subjectSelect = getElement('subjectSelect');
+            const marksObtained = getElement('marksObtained');
+            const totalMarks = getElement('totalMarks');
+            const errorBanner = getElement('addMarksError');
+            
+            if (!subjectSelect || !marksObtained || !totalMarks) return;
+            
+            const errorMessages = [];
+            let hasError = false;
+            
+            // Clear previous errors
+            clearAddMarksErrors();
+            
+            // Validate subject
+            if (!subjectSelect.value) {
+                const subjectError = document.getElementById('error-subjectSelect');
+                subjectError.textContent = 'Please select a subject';
+                subjectError.classList.add('visible');
+                subjectSelect.classList.add('error');
+                hasError = true;
+                errorMessages.push('Please select a subject');
+            } else {
+                subjectSelect.classList.add('valid');
+            }
+            
+            // Validate marks obtained
+            const marksVal = marksObtained.value.trim();
+            if (!marksVal) {
+                const marksError = document.getElementById('error-marksObtained');
+                marksError.textContent = 'Please enter marks obtained';
+                marksError.classList.add('visible');
+                marksObtained.classList.add('error');
+                hasError = true;
+                errorMessages.push('Please enter marks obtained');
+            } else {
+                const marksNum = parseFloat(marksVal);
+                if (isNaN(marksNum) || marksNum < 0) {
+                    const marksError = document.getElementById('error-marksObtained');
+                    marksError.textContent = 'Please enter a valid marks value (must be >= 0)';
+                    marksError.classList.add('visible');
+                    marksObtained.classList.add('error');
+                    hasError = true;
+                    errorMessages.push('Please enter a valid marks value');
+                }
+            }
+            
+            // Validate total marks
+            const totalVal = totalMarks.value.trim();
+            if (!totalVal) {
+                const totalError = document.getElementById('error-totalMarks');
+                totalError.textContent = 'Please enter total marks';
+                totalError.classList.add('visible');
+                totalMarks.classList.add('error');
+                hasError = true;
+                errorMessages.push('Please enter total marks');
+            } else {
+                const totalNum = parseFloat(totalVal);
+                if (isNaN(totalNum) || totalNum <= 0) {
+                    const totalError = document.getElementById('error-totalMarks');
+                    totalError.textContent = 'Please enter a valid total marks value (must be > 0)';
+                    totalError.classList.add('visible');
+                    totalMarks.classList.add('error');
+                    hasError = true;
+                    errorMessages.push('Please enter a valid total marks value');
+                }
+            }
+            
+            if (hasError) {
+                if (errorBanner) {
+                    errorBanner.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: middle; margin-right: 8px;">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>${errorMessages.join(', ')}`;
+                    errorBanner.style.display = 'block';
+                }
+                return;
+            }
+            
+            const subjectName = subjectSelect.options[subjectSelect.selectedIndex].text;
+            const obtained = parseFloat(marksVal);
+            const total = parseFloat(totalVal);
+            const percentage = ((obtained / total) * 100).toFixed(1);
+            
+            // Check if editing existing mark
+            if (editingMarkId !== null) {
+                const existingIndex = addedMarks.findIndex(m => m.id === editingMarkId);
+                if (existingIndex >= 0) {
+                    addedMarks[existingIndex] = {
+                        id: editingMarkId,
+                        subjectId: subjectSelect.value,
+                        subjectName: subjectName,
+                        marksObtained: obtained,
+                        totalMarks: total,
+                        percentage: percentage
+                    };
+                }
+                editingMarkId = null;
+                getElement('addBtn').textContent = 'Add';
+            } else {
+                // Check for duplicate subject
+                const existingIndex = addedMarks.findIndex(m => m.subjectId == subjectSelect.value);
+                if (existingIndex >= 0) {
+                    addedMarks[existingIndex] = {
+                        id: marksIdCounter++,
+                        subjectId: subjectSelect.value,
+                        subjectName: subjectName,
+                        marksObtained: obtained,
+                        totalMarks: total,
+                        percentage: percentage
+                    };
+                } else {
+                    addedMarks.push({
+                        id: marksIdCounter++,
+                        subjectId: subjectSelect.value,
+                        subjectName: subjectName,
+                        marksObtained: obtained,
+                        totalMarks: total,
+                        percentage: percentage
+                    });
+                }
+            }
+            
+            renderMarksList();
+            
+            // Clear form inputs
+            subjectSelect.value = '';
+            subjectSelect.classList.remove('error', 'valid');
+            marksObtained.value = '';
+            marksObtained.classList.remove('error', 'valid');
+            totalMarks.value = '100';
+            totalMarks.classList.remove('error', 'valid');
+            const subjectErr = document.getElementById('error-subjectSelect');
+            if (subjectErr) {
+                subjectErr.textContent = '';
+                subjectErr.classList.remove('visible');
+            }
+            const marksErr = document.getElementById('error-marksObtained');
+            if (marksErr) {
+                marksErr.textContent = '';
+                marksErr.classList.remove('visible');
+            }
+            const totalErr = document.getElementById('error-totalMarks');
+            if (totalErr) {
+                totalErr.textContent = '';
+                totalErr.classList.remove('visible');
+            }
+            
+            // Hide error banner
+            if (errorBanner) {
+                errorBanner.style.display = 'none';
+            }
+            
+            // Focus back on subject
+            subjectSelect.focus();
+        }
+
+        function deleteMark(id) {
+            addedMarks = addedMarks.filter(m => m.id !== id);
+            renderMarksList();
+        }
+
+        function editMark(id) {
+            const mark = addedMarks.find(m => m.id === id);
+            if (!mark) return;
+            
+            editingMarkId = id;
+            
+            const subjectSelect = getElement('subjectSelect');
+            const marksObtained = getElement('marksObtained');
+            const totalMarks = getElement('totalMarks');
+            
+            if (subjectSelect) subjectSelect.value = mark.subjectId;
+            if (marksObtained) marksObtained.value = mark.marksObtained;
+            if (totalMarks) totalMarks.value = mark.totalMarks;
+            
+            getElement('addBtn').textContent = 'Update';
+            
+            if (subjectSelect) subjectSelect.focus();
+            
+            getElement('marksListContent').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function clearAllMarks() {
+            if (addedMarks.length === 0) {
+                // Also clear table rows if present
+                const tbody = document.getElementById('marksTableBody');
+                const subjectSelect = document.getElementById('subjectSelect');
+                const marksObtained = document.getElementById('marksObtained');
+                const totalMarks = document.getElementById('totalMarks');
+                
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    for (let i = 0; i < 3; i++) {
+                        addNewRow();
+                    }
+                }
+            if (subjectSelect) subjectSelect.value = '';
+            if (marksObtained) marksObtained.value = '';
+            if (totalMarks) totalMarks.value = '100';
+            document.querySelectorAll('.error-text').forEach(function(el) {
+                el.textContent = '';
+                el.classList.remove('visible');
+            });
+            var errorInputs = document.querySelectorAll('input.error, select.error, input.valid, select.valid');
+            errorInputs.forEach(function(el) {
+                el.classList.remove('error', 'valid');
+            });
+                
+                var grandCard = document.getElementById('grandTotalCard');
+                if (grandCard) {
+                    grandCard.style.display = 'none';
+                }
+                rowCount = 0;
+                return;
+            }
+            
+            if (confirm('Clear all added marks? This will remove all entries from the list.')) {
+                addedMarks = [];
+                editingMarkId = null;
+                
+                renderMarksList();
+                
+                // Clear table rows and reset
+                const tbody = document.getElementById('marksTableBody');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    for (let i = 0; i < 3; i++) {
+                        addNewRow();
+                    }
+                }
+                
+                // Clear the "Add Marks for Subject" form inputs
+                var subjectSelect = document.getElementById('subjectSelect');
+                var marksObtained = document.getElementById('marksObtained');
+                var totalMarks = document.getElementById('totalMarks');
+                if (subjectSelect) subjectSelect.value = '';
+                if (marksObtained) marksObtained.value = '';
+                if (totalMarks) totalMarks.value = '100';
+                
+        // Clear error messages and classes
+        document.querySelectorAll('.error-text').forEach(function(el) {
+            el.textContent = '';
+            el.classList.remove('visible');
+        });
+        var errorInputs = document.querySelectorAll('input.error, select.error, input.valid, select.valid');
+        errorInputs.forEach(function(el) {
+            el.classList.remove('error', 'valid');
+        });
+                
+                var grandCard = document.getElementById('grandTotalCard');
+                if (grandCard) {
+                    grandCard.style.display = 'none';
+                }
+                
+                // Hide error banner
+                var errorBanner = document.getElementById('addMarksError');
+                if (errorBanner) {
+                    errorBanner.style.display = 'none';
+                }
+                
+                rowCount = 0;
+            }
+        }
+
+        function renderMarksList() {
+            const container = document.getElementById('marksListContent');
+            const emptyMsg = document.getElementById('emptyMarksMsg');
+            const grandCard = document.getElementById('grandTotalCard');
+            const grandValue = document.getElementById('grandTotalValue');
+            
+            if (addedMarks.length === 0) {
+                if (emptyMsg) {
+                    emptyMsg.style.display = 'block';
+                } else {
+                    container.innerHTML = '<p style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 1rem;" id="emptyMarksMsg">No marks added yet. Select a subject and click Add.</p>';
+                }
+                if (grandCard) grandCard.style.display = 'none';
+                return;
+            } else {
+                if (emptyMsg) emptyMsg.style.display = 'none';
+            }
+            
+            let html = '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse; min-width: 400px;"><thead style="background: var(--primary-gradient); color: white;"><tr><th style="padding: 0.75rem; text-align: left; border-radius: 12px 0 0 0;">#</th><th style="padding: 0.75rem; text-align: left;">Subject</th><th style="padding: 0.75rem; text-align: center;">Marks</th><th style="padding: 0.75rem; text-align: center;">Total</th><th style="padding: 0.75rem; text-align: center;">%</th><th style="padding: 0.75rem; text-align: center; border-radius: 0 12px 0 0;">Actions</th></tr></thead><tbody>';
+            
+            let totalObtained = 0;
+            let totalMarks = 0;
+            
+            addedMarks.forEach((m, index) => {
+                totalObtained += m.marksObtained;
+                totalMarks += m.totalMarks;
+                html += `<tr style="border-bottom: 1px solid var(--border-color); background: var(--bg-card);" onmouseover="this.style.background='var(--input-bg)'" onmouseout="this.style.background='var(--bg-card)'">
+                    <td style="padding: 0.75rem; color: var(--text-secondary);">${index + 1}</td>
+                    <td style="padding: 0.75rem;">${m.subjectName}</td>
+                    <td style="padding: 0.75rem; text-align: center;">${m.marksObtained}</td>
+                    <td style="padding: 0.75rem; text-align: center;">${m.totalMarks}</td>
+                    <td style="padding: 0.75rem; text-align: center; font-weight: 600; color: ${m.percentage >= 75 ? 'var(--success-color)' : m.percentage >= 50 ? 'var(--warning-color)' : 'var(--error-color)'}">${m.percentage}%</td>
+                    <td style="padding: 0.75rem; text-align: center;">
+                        <button type="button" onclick="editMark(${m.id})" title="Edit" style="background: transparent; border: none; color: #667eea; cursor: pointer; padding: 0.4rem; margin-right: 0.5rem; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='rgba(102,126,234,0.1)'" onmouseout="this.style.background='transparent'">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button type="button" onclick="deleteMark(${m.id})" title="Delete" style="background: transparent; border: none; color: var(--error-color); cursor: pointer; padding: 0.4rem; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            
+            const overallPercentage = totalMarks > 0 ? ((totalObtained / totalMarks) * 100).toFixed(1) : 0;
+            html += `<div style="margin-top: 1rem; padding: 1rem 1.5rem; background: var(--primary-gradient); border-radius: 12px; display: flex; justify-content: space-between; align-items: center; color: white; font-weight: 600;"><span>Grand Total</span><span style="font-size: 1.25rem;">${totalObtained} / ${totalMarks} (${overallPercentage}%)</span></div>`;
+            
+            container.innerHTML = html;
+            
+            if (grandCard && totalMarks > 0) {
+                grandCard.style.display = 'flex';
+                if (grandValue) grandValue.textContent = `${totalObtained} / ${totalMarks}`;
+            } else if (grandCard) {
+                grandCard.style.display = 'none';
+            }
+        }
+
+         document.getElementById('marksForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const studentSelect = document.getElementById('id_student');
+            const studentError = document.getElementById('student-error');
+            const terminal = document.getElementById('id_terminal');
+            
+            let hasErrors = false;
+
+            studentSelect.classList.remove('error', 'valid');
+            studentError.classList.remove('visible');
+            
+            if (!studentSelect.value) {
+                studentSelect.classList.add('error');
+                studentError.classList.add('visible');
+                hasErrors = true;
+            } else {
+                studentSelect.classList.add('valid');
+            }
+
+            if (!terminal.value) {
+                alert('Please select a terminal/exam');
+                hasErrors = true;
+            }
+
+             if (addedMarks.length === 0) {
+                 alert('Please add at least one subject with marks');
+                 hasErrors = true;
+             }
+
+             if (!hasErrors) {
+                 submitMarks();
+             }
+         });
+
+         function submitMarks() {
+            const studentId = document.getElementById('id_student').value;
+            const terminal = document.getElementById('id_terminal').value;
+            
+            const marksData = addedMarks.map(m => ({
+                student: studentId,
+                subject: m.subjectId,
+                terminal: terminal,
+                marks_obtained: m.marksObtained,
+                total_marks: m.totalMarks
+            }));
+
+            fetch('/api/add-marks-bulk/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ marks: marksData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const formCard = document.querySelector('.form-card');
+                    const formHeader = document.querySelector('.form-header');
+                    const successMessage = document.createElement('div');
+                    successMessage.className = 'success-message';
+                    successMessage.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        ${data.message || 'Marks added successfully!'}
+                    `;
+                    formHeader.parentNode.insertBefore(successMessage, formHeader.nextSibling);
+
+                    // Clear all form data and UI state after successful save
+                    setTimeout(() => {
+                        // Reset all marks
+                        addedMarks = [];
+                        editingMarkId = null;
+                        marksIdCounter = 0;
+                        renderMarksList();
+                        
+                        // Clear table rows and reset
+                        const tbody = document.getElementById('marksTableBody');
+                        if (tbody) {
+                            tbody.innerHTML = '';
+                            for (let i = 0; i < 3; i++) {
+                                addNewRow();
+                            }
+                        }
+                        rowCount = 0;
+                        
+                        // Clear form inputs
+                        const subjectSelect = document.getElementById('subjectSelect');
+                        const marksObtained = document.getElementById('marksObtained');
+                        const totalMarks = document.getElementById('totalMarks');
+                        if (subjectSelect) subjectSelect.value = '';
+                        if (marksObtained) marksObtained.value = '';
+                        if (totalMarks) totalMarks.value = '100';
+                        
+                        // Clear error states
+                        document.querySelectorAll('.error-text').forEach(function(el) {
+                            el.textContent = '';
+                        });
+                        document.querySelectorAll('input.error, select.error, input.valid, select.valid').forEach(function(el) {
+                            el.classList.remove('error', 'valid');
+                        });
+                        
+                        // Hide error banner
+                        const errorBanner = document.getElementById('addMarksError');
+                        if (errorBanner) {
+                            errorBanner.style.display = 'none';
+                        }
+                        
+                        // Hide grand total
+                        const grandCard = document.getElementById('grandTotalCard');
+                        if (grandCard) {
+                            grandCard.style.display = 'none';
+                        }
+                        
+                        // Clear student selection
+                        const studentSelect = document.getElementById('id_student');
+                        if (studentSelect) {
+                            studentSelect.value = '';
+                            studentSelect.classList.remove('error', 'valid');
+                        }
+                        
+                        // Reset student info display
+                        const imageContainer = document.getElementById('studentImageContainer');
+                        const studentNameDisplay = document.getElementById('selectedStudentName');
+                        if (imageContainer && studentNameDisplay) {
+                            imageContainer.innerHTML = `
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            `;
+                            imageContainer.classList.remove('has-image');
+                            studentNameDisplay.textContent = 'Select a student to begin';
+                        }
+                        
+                        // Keep success message visible for 1.5s then redirect
+                        setTimeout(() => {
+                            window.location.href = '/marks-list/';
+                        }, 1500);
+                    }, 200);
+                } else {
+                    showErrors(data.errors || [data.message]);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showErrors(['An error occurred. Please try again.']);
+            });
+        }
+        
+        function clearAddMarksErrors() {
+            const errorBanner = document.getElementById('addMarksError');
+            if (errorBanner) errorBanner.style.display = 'none';
+            const subjectError = document.getElementById('error-subjectSelect');
+            if (subjectError) {
+                subjectError.textContent = '';
+                subjectError.classList.remove('visible');
+            }
+            const marksError = document.getElementById('error-marksObtained');
+            if (marksError) {
+                marksError.textContent = '';
+                marksError.classList.remove('visible');
+            }
+            const totalError = document.getElementById('error-totalMarks');
+            if (totalError) {
+                totalError.textContent = '';
+                totalError.classList.remove('visible');
+            }
+            const subjectSelect = document.getElementById('subjectSelect');
+            const marksOb = document.getElementById('marksObtained');
+            const totalMarksInput = document.getElementById('totalMarks');
+            if (subjectSelect) subjectSelect.classList.remove('error');
+            if (marksOb) marksOb.classList.remove('error');
+            if (totalMarksInput) totalMarksInput.classList.remove('error');
+        }
+
+        function showErrors(errors) {
+            const formCard = document.querySelector('.form-card');
+            const formHeader = document.querySelector('.form-header');
+            const existingError = formCard.querySelector('.error-banner');
+            
+            if (existingError) {
+                existingError.remove();
+            }
+
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-banner';
+            errorDiv.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <div style="margin-top: 0.5rem;">
+                    <ul style="margin-left: 1.5rem; list-style-type: disc;">
+                        ${errors.map(e => `<li>${e}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+            formHeader.parentNode.insertBefore(errorDiv, formHeader.nextSibling);
+        }
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            function modelMatcher(params, data) {
+                if ($.trim(params.term) === '') {
+                    return data;
+                }
+                if (typeof data.text === 'undefined') {
+                    return null;
+                }
+                if (data.text.toLowerCase().indexOf(params.term.toLowerCase()) > -1) {
+                    return data;
+                }
+                return null;
+            }
+
+            $('#id_student').select2({
+                placeholder: "Select or type to search...",
+                allowClear: true,
+                width: '100%',
+                matcher: modelMatcher
+            });
+
+            $('#id_student').on('change', function() {
+                const studentId = $(this).val();
+                const imageContainer = document.getElementById('studentImageContainer');
+                const studentNameDisplay = document.getElementById('selectedStudentName');
+                
+                if (studentId) {
+                    fetch(`/api/student-info/${studentId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.student) {
+                                const student = data.student;
+                                if (student.image_url) {
+                                    imageContainer.innerHTML = `<img src="${student.image_url}" alt="${student.name}" onload="this.parentElement.classList.add('has-image')" onerror="this.parentElement.classList.remove('has-image'); this.parentElement.innerHTML='<svg width=\\'32\\' height=\\'32\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><path d=\\'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/><circle cx=\\'12\\' cy=\\'7\\' r=\\'4\\'/></svg>'">`;
+                                } else {
+                                    imageContainer.innerHTML = `
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="12" cy="7" r="4"/>
+                                        </svg>
+                                    `;
+                                    imageContainer.classList.remove('has-image');
+                                }
+                                studentNameDisplay.textContent = `${student.name} - ${student.class} ${student.section} (${student.roll_number || 'No Roll'})`;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching student info:', error);
+                            imageContainer.innerHTML = `
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            `;
+                            imageContainer.classList.remove('has-image');
+                            studentNameDisplay.textContent = 'Select a student to begin';
+                        });
+                } else {
+                    imageContainer.innerHTML = `
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    `;
+                    imageContainer.classList.remove('has-image');
+                    studentNameDisplay.textContent = 'Select a student to begin';
+                }
+            });
+
+            // Level/Class/Semester filtering for teachers
+            const levelsHierarchy = JSON.parse('{{ levels_hierarchy_json|safe }}');
+            const levelSelect = document.getElementById('levelSelect');
+            const classSemesterSelect = document.getElementById('classSemesterSelect');
+            const classLabelSpan = document.getElementById('classSemesterLabelText');
+            const levelHint = document.getElementById('levelHint');
+
+            // Auto-fill total marks when subject is selected
+            const subjectSelect = document.getElementById('subjectSelect');
+            if (subjectSelect) {
+                subjectSelect.addEventListener('change', function() {
+                    const subjId = this.value;
+                    const totalMarksInput = document.getElementById('totalMarks');
+                    if (subjId && subjectTotalMap[subjId]) {
+                        totalMarksInput.value = subjectTotalMap[subjId];
+                    }
+                });
+            }
+
+            if (levelSelect && typeof levelsHierarchy === 'object' && Object.keys(levelsHierarchy).length > 0) {
+                levelSelect.addEventListener('change', function() {
+                    const level = this.value;
+                    // Reset student dropdown
+                    $('#id_student').empty().trigger('change.select2');
+                    
+                    classSemesterSelect.innerHTML = '<option value="">Select Class</option>';
+                    classSemesterSelect.disabled = true;
+                    
+                    if (levelHint) {
+                        levelHint.textContent = 'Select a level to load classes/semesters';
+                    }
+
+                    if (level && levelsHierarchy[level]) {
+                        const levelData = levelsHierarchy[level];
+                        const isSemester = levelData.type === 'semester';
+                        classLabelSpan.textContent = isSemester ? 'Semester' : 'Class';
+                        
+                        // Update placeholder based on type
+                        classSemesterSelect.innerHTML = `<option value="">Select ${isSemester ? 'Semester' : 'Class'}</option>`;
+                        
+                        levelData.options.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.label;
+                            classSemesterSelect.appendChild(option);
+                        });
+                        classSemesterSelect.disabled = false;
+                        
+                        if (levelHint) {
+                            levelHint.textContent = isSemester 
+                                ? 'Select a semester to view students' 
+                                : 'Select a class to view students';
+                        }
+                    }
+                });
+
+                classSemesterSelect.addEventListener('change', function() {
+                    const level = levelSelect.value;
+                    const classVal = this.value;
+                    if (!level || !classVal) return;
+                    
+                    const levelData = levelsHierarchy[level];
+                    const selectedClass = levelData.options.find(opt => opt.value === classVal);
+                    if (!selectedClass) return;
+                    
+                    const students = selectedClass.students;
+                    const $studentSelect = $('#id_student');
+                    $studentSelect.empty();
+                    $studentSelect.append(new Option('Select Student', ''));
+                    students.forEach(st => {
+                        $studentSelect.append(new Option(`${st.name} (${st.roll_number || 'N/A'})`, st.id));
+                    });
+                    // Reinitialize select2 to refresh options
+                    $studentSelect.select2('destroy').select2({
+                        placeholder: "Select or type to search...",
+                        allowClear: true,
+                        width: '100%',
+                        matcher: modelMatcher
+                    });
+                    $studentSelect.trigger('change');
+                });
+            }
+
+        });
+    </script>
+</body>
+</html>

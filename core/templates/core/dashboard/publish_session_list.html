@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result Publish Sessions — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-file-signature"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/publish-sessions/"><i class="fas fa-file-signature"></i> Sessions</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div style="max-width:1400px;margin:0 auto;padding:30px 20px;">
+        {% if messages %}{% for m in messages %}
+        <div class="alert alert-{{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="fas fa-file-signature"></i> Result Publish Sessions</h2>
+            <a href="{% url 'core:publish_session_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Session</a>
+        </div>
+        <hr>
+        <form method="get" class="row g-2 mb-3">
+            <div class="col-auto">
+                <select name="subject" class="form-select form-select-sm">
+                    <option value="">All Subjects</option>
+                    {% for subj in subjects %}<option value="{{ subj.id }}" {% if subject_id == subj.id|stringformat:"s" %}selected{% endif %}>{{ subj.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for code, label in status_choices %}<option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="target_class" class="form-select form-select-sm">
+                    <option value="">All Classes</option>
+                    {% for cls in classes %}<option value="{{ cls }}" {% if target_class == cls %}selected{% endif %}>{{ cls }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-secondary">Filter</button></div>
+        </form>
+        <div class="card"><div class="card-body table-responsive">
+            <table class="table table-hover align-middle"><thead><tr>
+                <th>Name</th><th>Subject</th><th>Class</th><th>Status</th>
+                <th>Academic Year</th><th>Created By</th><th>Created</th><th>Published</th><th>Actions</th>
+            </tr></thead><tbody>
+            {% for session in sessions %}
+            <tr>
+                <td><strong>{{ session.name }}</strong></td>
+                <td>{{ session.subject.name }}</td><td>{{ session.target_class }}</td>
+                <td>
+                    {% if session.status == 'published' %}<span class="badge bg-success">{{ session.get_status_display }}</span>
+                    {% elif session.status == 'approved' %}<span class="badge bg-info">{{ session.get_status_display }}</span>
+                    {% elif session.status == 'under_review' %}<span class="badge bg-warning">{{ session.get_status_display }}</span>
+                    {% elif session.status == 'rejected' %}<span class="badge bg-danger">{{ session.get_status_display }}</span>
+                    {% elif session.status == 'archived' %}<span class="badge bg-secondary">{{ session.get_status_display }}</span>
+                    {% else %}<span class="badge bg-light text-dark">{{ session.get_status_display }}</span>{% endif %}
+                </td>
+                <td>{{ session.academic_year|default:"—" }}</td>
+                <td>{{ session.created_by }}</td>
+                <td>{{ session.created_at|date:"M d Y" }}</td>
+                <td>{{ session.published_at|date:"M d Y H:i"|default:"—" }}</td>
+                <td><a href="{% url 'core:publish_session_detail' session.id %}" class="btn btn-sm btn-outline-primary">View</a></td>
+            </tr>
+            {% endfor %}
+            {% if not sessions %}<tr><td colspan="9" class="text-center text-muted">No sessions found.</td></tr>{% endif %}
+            </tbody></table>
+        </div></div>
+    </div>
+</body>
+</html>

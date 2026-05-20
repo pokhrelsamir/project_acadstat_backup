@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Invoice — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .invc-wrapper{max-width:900px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .form-card{background:white;border-radius:16px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .form-card h3{margin-bottom:20px;font-size:1.2rem;color:#1e293b;}
+        .inp{width:100%;padding:10px 14px;border:2px solid #e2e8f0;border-radius:10px;font-size:.9rem;margin-bottom:12px;}
+        .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+        .li-row{display:grid;grid-template-columns:2fr 80px 120px 120px 40px;gap:8px;align-items:center;margin-bottom:8px;}
+        .li-row input{padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;}
+        .li-row button{padding:8px;border:none;border-radius:8px;cursor:pointer;background:#ef4444;color:white;}
+        .li-total{border-top:2px solid #e2e8f0;padding-top:12px;margin-top:12px;display:flex;justify-content:flex-end;gap:20px;font-size:1rem;font-weight:700;}
+        @media(max-width:600px){.invc-wrapper{padding:15px;}.row{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-file-invoice"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/invoices/"><i class="fas fa-list"></i> Invoices</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="invc-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-file-invoice-dollar"></i> Create Invoice</h1>
+            <a href="/invoices/" class="btn btn-secondary">← Back to Invoices</a>
+        </div>
+        <form method="POST" action="" id="invForm">
+            {% csrf_token %}
+            <div class="form-card">
+                <h3>Invoice Details</h3>
+                <div class="row">
+                    <div>
+                        <label style="font-size:.85rem;font-weight:600;color:#64748b;">Bill To</label>
+                        {{ form.issued_to }}
+                    </div>
+                    <div>
+                        <label style="font-size:.85rem;font-weight:600;color:#64748b;">Subscription</label>
+                        {{ form.subscription }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div>
+                        <label style="font-size:.85rem;font-weight:600;color:#64748b;">Issue Date</label>
+                        {{ form.issue_date }}
+                    </div>
+                    <div>
+                        <label style="font-size:.85rem;font-weight:600;color:#64748b;">Due Date</label>
+                        {{ form.due_date }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <h3><i class="fas fa-receipt"></i> Line Items</h3>
+                <div id="lineItemsContainer">
+                    {% for item in form.line_items %}
+                    <div class="li-row">
+                        <input type="text" name="description[]" placeholder="Description">
+                        <input type="number" name="qty[]" value="1" min="1" style="width:70px;" placeholder="Qty">
+                        <input type="number" step="0.01" name="unit_price[]" placeholder="Unit Price">
+                        <input type="text" class="readonly" id="lineTotal" readonly placeholder="Total">
+                        <button type="button" onclick="this.parentElement.remove();recalc()">×</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" onclick="addLineItem()" style="padding:8px 16px;border-radius:8px;border:2px dashed #e2e8f0;background:transparent;color:#667eea;cursor:pointer;margin-bottom:12px;font-size:.88rem;">
+                    + Add Line Item
+                </button>
+                <div class="li-total">
+                    <span>Subtotal: Rs. <span id="subtotalDisplay">0.00</span></span>
+                    <span>Tax (Rs.): <input type="number" step="0.01" name="tax_amount" id="taxInput" value="0" style="width:80px;text-align:right;border:1px solid #e2e8f0;border-radius:6px;font-size:.88rem;"></span>
+                    <span style="color:#10b981;">Total: Rs. <span id="grandTotal">0.00</span></span>
+                </div>
+                <input type="hidden" name="line_items_json" id="line_items_json" value="">
+            </div>
+
+            <div style="display:flex;gap:12px;justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Create Invoice</button>
+                <a href="/invoices/" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+    <script>
+        function addLineItem(){
+            const c=document.getElementById('lineItemsContainer');
+            const d=document.createElement('div');
+            d.className='li-row';d.innerHTML=`<input type="text" name="description[]" placeholder="Description">
+                <input type="number" name="qty[]" value="1" min="1" style="width:70px;" placeholder="Qty">
+                <input type="number" step="0.01" name="unit_price[]" placeholder="Unit Price">
+                <input type="text" class="readonly" readonly placeholder="Total">
+                <button type="button" onclick="this.parentElement.remove();recalc()">×</button>`;
+            c.appendChild(d);
+        }
+        function recalc(){
+            let sub=0;
+            document.querySelectorAll('#lineItemsContainer .li-row').forEach(row=>{
+                const qty=parseFloat(row.querySelector('[name="qty[]"]').value)||0;
+                const price=parseFloat(row.querySelector('[name="unit_price[]"]').value)||0;
+                const total=(qty*price).toFixed(2);
+                row.querySelector('.readonly').value=total;
+                sub+=qty*price;
+            });
+            const tax=parseFloat(document.getElementById('taxInput').value)||0;
+            document.getElementById('subtotalDisplay').textContent=sub.toFixed(2);
+            document.getElementById('grandTotal').textContent=(sub+tax).toFixed(2);
+        }
+        document.querySelectorAll('input').forEach(el=>{el.addEventListener('input',recalc);});
+        document.getElementById('invForm').addEventListener('submit',function(){
+            const items=[];document.querySelectorAll('#lineItemsContainer .li-row').forEach(row=>{
+                const desc=row.querySelector('[name="description[]"]').value.trim();
+                if(!desc)return;
+                items.push({description:desc,qty:parseFloat(row.querySelector('[name="qty[]"]').value)||1,
+                            unit_price:parseFloat(row.querySelector('[name="unit_price[]"]').value)||0,
+                            total:parseFloat(row.querySelector('.readonly').value)||0});
+            });
+            document.getElementById('line_items_json').value=JSON.stringify(items);
+        });
+    </script>
+</body>
+</html>

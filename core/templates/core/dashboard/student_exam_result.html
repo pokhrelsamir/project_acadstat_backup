@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Result — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .er-wrapper{max-width:800px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .score-card{background:white;border-radius:16px;padding:32px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:24px;text-align:center;}
+        .score-circle{width:130px;height:130px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 16px;background:linear-gradient(135deg,var(--pri),var(--ok));color:white;}
+        .score-circle .big{font-size:2.2rem;font-weight:800;line-height:1;}
+        .score-circle .sub{font-size:.72rem;opacity:.85;}
+        .pass-msg{font-size:1.1rem;font-weight:700;color:{% if is_pass %}#10b981{% else %}#ef4444{% endif %};}
+        .exam-meta{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:14px;}
+        .exam-meta span{font-size:.82rem;color:#64748b;background:#f8fafc;padding:5px 14px;border-radius:8px;}
+        .qa-item{background:white;border-radius:12px;padding:18px 22px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:12px;display:flex;gap:14px;align-items:flex-start;}
+        .qa-num{width:30px;height:30px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;}
+        .qa-correct{background:#d1fae5;color:#065f46;}
+        .qa-wrong{background:#fee2e2;color:#991b1b;}
+        .qa-content{flex:1;}
+        .qa-question{font-size:.88rem;color:#374151;font-weight:600;margin-bottom:8px;}
+        .qa-ans-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px;font-size:.8rem;}
+        .qa-student{color:#1e293b;font-weight:600;}
+        .ans-ok{color:#065f46;font-weight:600;}
+        .ans-err{color:#ef4444;font-weight:600;}
+        .status-badge{display:inline-block;padding:3px 14px;border-radius:20px;font-size:.72rem;font-weight:700;}
+        .passed{background:#d1fae5;color:#065f46;}
+        .failed{background:#fee2e2;color:#991b1b;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 22px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-ghost{background:#f1f5f9;color:#64748b;}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-graduation-cap"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/student-exams/"><i class="fas fa-arrow-left"></i> My Exams</a>
+            <a href="/student-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        </div>
+    </nav>
+    <div class="er-wrapper">
+        <!-- Score Card -->
+        <div class="score-card">
+            <div class="score-circle">
+                <div class="big">{{ total_marks_awarded|floatformat:1 }}</div>
+                <div class="sub">out of {{ total_marks_attempted }}</div>
+            </div>
+            <div class="pass-msg">
+                {% if is_pass %}<i class="fas fa-trophy" style="color:var(--ok);"></i> PASSED!{% else %}<i class="fas fa-times-circle" style="color:var(--err);"></i> NOT PASSED{% endif %}
+            </div>
+            <div style="margin-top:8px;">
+                <span class="status-badge {% if is_pass %}passed{% else %}failed{% endif %}">{{ percentage }}%</span>
+                <span style="margin-left:8px;font-size:.8rem;font-weight:600;color:#64748b;">Pass threshold: {{ exam.passing_marks }}/{{ exam.total_marks }}</span>
+            </div>
+            <div class="exam-meta">
+                <span><i class="fas fa-book"></i> {{ exam.title }} — {{ exam.subject.name }}</span>
+                <span><i class="fas fa-calendar"></i> {{ attempt.started_at|date:'M d, Y H:i' }}</span>
+            </div>
+        </div>
+
+        <!-- Question Review -->
+        <h2 style="font-size:1rem;color:#1e293b;margin-bottom:16px;"><i class="fas fa-clipboard-list" style="color:var(--pri);"></i> Answer Review</h2>
+        {% for item in result_data %}
+        <div class="qa-item">
+            <div class="qa-num {% if item.is_correct %}qa-correct{% else %}qa-wrong{% endif %}">{{ forloop.counter }}</div>
+            <div class="qa-content">
+                <div class="qa-question">{{ item.question.question_text }}</div>
+
+                {% if item.question.question_type == 'MCQ' or item.question.question_type == 'TRUE_FALSE' %}
+                <div class="qa-ans-row">
+                    <span>Your answer: <span class="{% if item.is_correct %}ans-ok{% else %}ans-err{% endif %}">
+                        {{ item.answer.selected_option|default:'No answer' }}
+                    </span></span>
+                    <span>Correct: <b class="ans-ok">{{ item.correct_answer }}</b></span>
+                </div>
+
+                {% if item.question.options %}
+                <div class="qa-ans-row" style="margin-top:6px;">
+                    {% for opt in item.question.options %}
+                    <span style="background:{% if item.is_correct %}{% if opt.label|upper == item.correct_answer|upper %}#d1fae5;color:#065f46;{% else %}#f3f4f6;color:#374151;{% endif %}{% else %}{% if opt.label|upper == item.correct_answer|upper or opt.label|upper == item.answer.selected_option|default:''|upper %}#fee2e2;color:#991b1b;{% else %}#f3f4f6;color:#374151;{% endif %}{% endif %};padding:4px 10px;border-radius:6px;font-size:.78rem;">
+                        <b>{{ opt.label }}.</b> {{ opt.text }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% else %}
+                <div class="qa-ans-row">
+                    <span>Your answer:</span>
+                    <p style="margin:2px 0 0;font-size:.82rem;color:#1e293b;background:#f8fafc;padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0;width:100%;white-space:pre-wrap;">{{ item.answer.answer_text|default:'No answer provided' }}</p>
+                </div>
+                {% endif %}
+
+                <span style="margin-top:6px;display:inline-block;font-size:.75rem;color:{% if item.is_correct %}var(--ok){% else %}var(--err){% endif %};font-weight:700;">
+                    {% if item.is_correct %}✅ Correct{% else %}❌ Incorrect{% endif %}
+                </span>
+                <span style="font-size:.72rem;color:#94a3b8;margin-left:8px;">{{ item.question.marks }} mark{{ item.question.marks|pluralize }}</span>
+            </div>
+        </div>
+        {% empty %}
+        <p style="text-align:center;color:#94a3b8;font-size:.88rem;padding:24px;">No answers recorded.</p>
+        {% endfor %}
+
+        <div style="text-align:center;margin-top:24px;">
+            <a href="{% url 'core:student_exam_list' %}" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Back to Exams</a>
+        </div>
+    </div>
+</body>
+</html>

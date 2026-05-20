@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--bg:#f8fafc;}
+        .p-wrapper{max-width:700px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{margin-bottom:24px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .info-card{background:white;border-radius:20px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.08);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .profile-head{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:24px;}
+        .profile-img{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--pri),#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:2rem;}
+        .profile-name{font-size:1.4rem;font-weight:700;color:#1e293b;}
+        .profile-meta{font-size:.9rem;color:#64748b;}
+        .divider{height:1px;background:#e2e8f0;margin:16px 0;}
+        .info-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f8fafc;font-size:.92rem;}
+        .info-row .lbl{color:#64748b;}
+        .info-row .val{font-weight:600;color:#1e293b;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-warn{background:#f59e0b;color:white;}
+        .btn-danger{background:#ef4444;color:white;margin-top:12px;}
+        section{margin-bottom:20px;}
+        h3.section-title{font-size:1.05rem;color:#1e293b;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+        @media(max-width:768px){.p-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-user-circle"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/student-dashboard/"><i class="fas fa-dashboard"></i> Dashboard</a>
+            <a href="/student-analysis/"><i class="fas fa-robot"></i> Analysis</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="p-wrapper">
+        <div class="page-header"><h1><i class="fas fa-id-card"></i> My Profile</h1></div>
+        {% if error %}
+        <div style="background:#fef2f2;color:#dc2626;border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;">{{ error }}</div>
+        {% else %}
+        <div class="info-card">
+            <div class="profile-head">
+                <div class="profile-img">{{ student.name|slice:":1"|upper }}</div>
+                <div>
+                    <div class="profile-name">{{ student.name }}</div>
+                    <div class="profile-meta">{{ student.student_class }} {{ student.section }} · {{ student.get_level_display }}</div>
+                </div>
+                <div style="margin-left:auto;">
+                    <button class="btn btn-primary" onclick="new_section()"><i class="fas fa-edit"></i> Edit Profile</button>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-id-card"></i> Roll Number</span><span class="val">{{ student.roll_number|default:"—" }}</span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-at"></i> Username</span><span class="val">{{ request.user.username }}</span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-envelope"></i> Email</span><span class="val">{{ student.email|default:"—" }}</span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-phone"></i> Phone</span><span class="val">{{ student.phone|default:"—" }}</span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-calendar-day"></i> Date of Birth</span><span class="val">{{ student.date_of_birth|default:"—"|date:"M d, Y" }}</span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-tint"></i> Blood Group</span><span class="val">{{ student.blood_group|default:"—" }}</span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-female"></i> Gender</span><span class="val">{{ student.get_gender_display|default:"—" }}</span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-house-user"></i> House</span><span class="val">{{ student.house|default:"—" }}</span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-graduation-cap"></i> CGPA</span><span class="val"><strong>{{ student.cgpa }}</strong> / 4.0</span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-trophy"></i> Class Rank</span><span class="val"><strong>#{{ student.rank_in_class }}</strong></span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-chart-pie"></i> Attendance %</span><span class="val"><strong style="color:{# if student.attendance_percentage >= 90%}#10b981{% elif student.attendance_percentage >= 75%}#f59e0b{% else %}#ef4444{% endif %};">{{ student.attendance_percentage }}%</strong></span></div>
+            <div class="info-row"><span class="lbl"><i class="fas fa-calendar-check"></i> Date of Admission</span><span class="val">{{ student.admission_date|default:"—"|date:"M d, Y" }}</span></div>
+        </div>
+
+        <!-- Password change -->
+        <div class="info-card">
+            <h3 class="section-title"><i class="fas fa-lock"></i> Change Password</h3>
+            <div style="margin-bottom:12px;"><button class="btn btn-primary" onclick="togglePwd()"><i class="fas fa-key"></i> Change Password</button></div>
+            <form method="post" action="{% url 'core:change_password' %}" id="pwdForm" style="display:none;flex-direction:column;gap:14px;max-width:420px;">
+                {% csrf_token %}
+                <div>
+                    <label style="font-size:.85rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Current Password</label>
+                    <input type="password" name="current_password" required style="width:100%;padding:10px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:.95rem;">
+                </div>
+                <div>
+                    <label style="font-size:.85rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">New Password (≥ 4 chars)</label>
+                    <input type="password" name="new_password" required minlength="4"
+                           style="width:100%;padding:10px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:.95rem;">
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Password</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    <script>
+        function new_section() {
+            document.querySelector('.profile-head button').innerHTML='<i class="fas fa-sync"></i> Refresh';
+            location.reload();
+        }
+        function togglePwd() {
+            var f=document.getElementById('pwdForm');
+            f.style.display=f.style.display==='none'?'flex':'none';
+        }
+    </script>
+</body>
+</html>

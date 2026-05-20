@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for Leave — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .lc-wrapper{max-width:700px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .back-link{display:inline-flex;align-items:center;gap:8px;color:var(--pri);text-decoration:none;font-weight:600;margin-bottom:20px;}
+        .card{background:white;border-radius:16px;padding:30px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;}
+        .card h2{margin:0 0 24px;font-size:1.15rem;color:#1e293b;}
+        .form-group{margin-bottom:18px;}
+        .form-group label{display:block;font-size:.82rem;font-weight:700;color:#64748b;margin-bottom:6px;}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:.9rem;font-family:inherit;transition:border-color .2s;}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--pri);}
+        .row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:12px 26px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-ghost{background:#f1f5f9;color:#64748b;}
+        @media(max-width:600px){.row-2{grid-template-columns:1fr;}.lc-wrapper{padding:15px;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-calendar-alt"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/my-leaves/"><i class="fas fa-arrow-left"></i> My Leaves</a>
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="lc-wrapper">
+        <a href="{% url 'core:teacher_leave_list' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to My Leaves</a>
+
+        <div class="card">
+            <h2><i class="fas fa-calendar-plus" style="color:var(--pri);"></i> Apply for Leave</h2>
+            <form id="leaveForm" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Leave Type *</label>
+                    <select name="leave_type" required>
+                        {% for key, label in LEAVE_TYPE_CHOICES %}<option value="{{ key }}">{{ label }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="row-2">
+                    <div class="form-group">
+                        <label>Start Date *</label>
+                        <input type="date" name="start_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Date *</label>
+                        <input type="date" name="end_date" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Reason *</label>
+                    <textarea name="reason" rows="4" required placeholder="Briefly explain why you need leave..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Substitute Teacher (optional)</label>
+                    <select name="substitute_teacher">
+                        <option value="">No substitute needed / TBD</option>
+                        {% for teacher in other_teachers %}
+                        <option value="{{ teacher.id }}">{{ teacher.get_full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div style="display:flex;gap:12px;margin-top:24px;">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Submit Leave Request</button>
+                    <a href="{% url 'core:teacher_leave_list' %}" class="btn btn-ghost">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

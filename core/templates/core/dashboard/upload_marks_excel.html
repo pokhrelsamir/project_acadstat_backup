@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Upload Marks - Academic System</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <style>
+        :root {
+            --page-bg: #F1F5F9;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--page-bg);
+        }
+
+        .page-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .page-header h1 {
+            font-size: 2.1rem;
+            font-weight: 700;
+            color: var(--text-primary, #1e293b);
+            margin-bottom: 0.4rem;
+        }
+        .page-header p {
+            color: var(--text-secondary, #64748b);
+            font-size: 1rem;
+        }
+
+        .card {
+            background: var(--bg-card, #ffffff);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color, #e2e8f0);
+            width: 100%;
+            max-width: 820px;
+            box-sizing: border-box;
+        }
+
+        .card-body {
+            padding: 2.5rem 2rem;
+        }
+
+        /* ── Step indicator ── */
+        .steps {
+            display: flex;
+            gap: 0;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .step-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            background: #e2e8f0;
+            color: #64748b;
+            flex-shrink: 0;
+        }
+        .step.active .step-dot {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        .step-line {
+            width: 80px;
+            height: 3px;
+            background: #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        /* ── Upload zone ── */
+        .upload-zone {
+            border: 2px dashed #667eea;
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: rgba(102, 126, 234, 0.03);
+        }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: #4F46E5;
+            background: rgba(79, 70, 229, 0.07);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.18);
+        }
+        .upload-zone i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        .upload-zone h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary, #1e293b);
+            margin-bottom: 0.5rem;
+        }
+        .upload-zone p {
+            color: var(--text-secondary, #64748b);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+
+        /* ── File selected card ── */
+        .file-card {
+            display: none;
+            align-items: center;
+            gap: 1.2rem;
+            padding: 1.2rem 1.5rem;
+            background: rgba(16, 185, 129, 0.06);
+            border: 1.5px solid #10b981;
+            border-radius: 14px;
+            margin-top: 1.5rem;
+        }
+        .file-card.show { display: flex; }
+        .file-card .file-icon {
+            font-size: 2rem;
+            color: #10b981;
+            flex-shrink: 0;
+        }
+        .file-card .file-info { flex: 1; min-width: 0; }
+        .file-card .file-name {
+            font-weight: 600;
+            color: var(--text-primary, #1e293b);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-card .file-size {
+            font-size: 0.82rem;
+            color: var(--text-secondary, #64748b);
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.6rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-family: 'Poppins', sans-serif;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.55);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-outline {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .btn-outline:hover {
+            background: rgba(102, 126, 234, 0.08);
+        }
+        .btn-danger {
+            background: transparent;
+            color: #ef4444;
+            border: 1.5px solid #fca5a5;
+        }
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .card-actions .btn { flex: 1; justify-content: center; }
+
+        /* ── Messages ── */
+        .toast {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+        .toast.show { display: flex; }
+        .toast-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1.5px solid #10b981;
+            color: #059669;
+        }
+        .toast-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1.5px solid #ef4444;
+            color: #dc2626;
+        }
+        .toast-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1.5px solid #f59e0b;
+            color: #d97706;
+        }
+
+        /* ── Divider ── */
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border-color, #e2e8f0);
+            margin: 2rem 0;
+        }
+
+        /* ── Format guide card ── */
+        .guide h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary, #1e293b);
+            margin: 0 0 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .guide-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .guide-table th, .guide-table td {
+            padding: 0.65rem 0.85rem;
+            border: 1px solid var(--border-color, #e2e8f0);
+            text-align: left;
+        }
+        .guide-table th {
+            background: rgba(102, 126, 234, 0.08);
+            font-weight: 600;
+            color: #667eea;
+        }
+        .guide-table code {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 2px 6px;
+            border-radius: 5px;
+            font-size: 0.82rem;
+            color: #4F46E5;
+        }
+
+        /* ── Terminal legend ── */
+        .terminal-legend {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        .terminal-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            background: rgba(79, 70, 229, 0.08);
+            color: #4F46E5;
+            border: 1.5px solid rgba(79, 70, 229, 0.2);
+        }
+
+        /* ── Progress bar ── */
+        .progress-wrap {
+            display: none;
+            margin-top: 1.5rem;
+        }
+        .progress-wrap.show { display: block; }
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.4s ease;
+            border-radius: 99px;
+        }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: var(--text-secondary, #64748b);
+            margin-top: 0.4rem;
+        }
+
+        /* ── Back button ── */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.2rem;
+            background: var(--bg-card, #fff);
+            border: 2px solid var(--border-color, #e2e8f0);
+            border-radius: 10px;
+            color: var(--text-primary, #1e293b);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            transition: border-color 0.3s ease;
+        }
+        .back-btn:hover { border-color: #667eea; }
+
+        @media (max-width: 640px) {
+            .card-body { padding: 1.5rem 1rem; }
+            .step-line { width: 40px; }
+            .card-actions { flex-direction: column; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-wrap">
+        <div style="width:100%;max-width:820px;">
+            <a href="/teacher-dashboard/" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+
+            <div class="page-header">
+                <h1><i class="fas fa-file-excel" style="color:#10b981;"></i> Bulk Upload Marks</h1>
+                <p>Upload marks for all terminals in one Excel file — <strong>4 sheets, 1 upload</strong></p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                    <div class="toast toast-success show">
+                        <i class="fas fa-check-circle"></i> {{ message }}
+                    </div>
+                    {% elif message.tags == 'warning' %}
+                    <div class="toast toast-warning show">
+                        <i class="fas fa-exclamation-triangle"></i> {{ message }}
+                    </div>
+                    {% else %}
+                    <div class="toast toast-error show">
+                        <i class="fas fa-times-circle"></i> {{ message }}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            <!-- ─── Upload card ─── -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-body">
+
+                    <!-- Step indicator -->
+                    <div class="steps">
+                        <div class="step active"><div class="step-dot"><i class="fas fa-download"></i></div></div>
+                        <div class="step-line"></div>
+                        <div class="step"><div class="step-dot">2</div></div>
+                        <div class="step-line"></div>
+                        <div class="step"><div class="step-dot">3</div></div>
+                    </div>
+
+                    <!-- Step 1 — Download template -->
+                    <h3 style="margin: 0 0 1rem; font-size: 1.05rem; color: var(--text-primary);">
+                        <i class="fas fa-1" style="color:#667eea; font-weight:700;"></i> Download the template
+                    </h3>
+                    <p style="color: var(--text-secondary, #64748b); margin: 0 0 1.1rem; font-size: 0.9rem;">
+                        The template contains <strong>four sheets</strong> — one per terminal (1st, 2nd, 3rd, Final). 
+                        Each sheet has the same column format. Fill in all four sheets before uploading.
+                    </p>
+                    <div class="card-actions">
+                        <button type="button" class="btn btn-outline" id="downloadBtn">
+                            <i class="fas fa-file-excel"></i> Download Excel Template
+                        </button>
+                        <a href="/teacher-dashboard/" class="btn btn-danger">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+
+                    <hr class="divider">
+
+                    <!-- Step 2 — Upload file -->
+                    <h3 style="margin: 0 0 1rem; font-size: 1.05rem; color: var(--text-primary);">
+                        <i class="fas fa-2" style="color:#667eea; font-weight:700;"></i> Upload your completed file
+                    </h3>
+
+                    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>Drag &amp; drop your Excel file here</h3>
+                        <p>or <strong>click to browse</strong> — accepts .xlsx / .xls</p>
+                    </div>
+
+                    <div class="file-card" id="fileCard">
+                        <i class="fas fa-file-excel file-icon"></i>
+                        <div class="file-info">
+                            <div class="file-name" id="fileName"></div>
+                            <div class="file-size" id="fileSize"></div>
+                        </div>
+                        <button type="button" class="btn btn-danger" id="removeFileBtn">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+
+                    <div class="progress-wrap" id="progressWrap">
+                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                        <div class="progress-label"><span>Processing…</span><span id="progressPct">0%</span></div>
+                    </div>
+
+                    <div class="card-actions" id="uploadActions" style="display:none;">
+                        <button type="button" class="btn btn-primary" id="uploadBtn" style="flex:2;">
+                            <i class="fas fa-upload"></i> Upload Marks
+                        </button>
+                        <span style="align-self:center; color:var(--text-secondary,#64748b); font-size:0.88rem;">
+                            All 4 sheets will be processed in one upload.
+                        </span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ─── Format guide card ─── -->
+            <div class="card">
+                <div class="card-body guide">
+                    <h3><i class="fas fa-info-circle" style="color:#667eea;"></i> Excel format guide</h3>
+                    <table class="guide-table">
+                        <thead>
+                            <tr>
+                                <th>Column</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Roll/Student ID</strong></td>
+                                <td>Student roll number <em>or</em> full name (required — used to find the student)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Student Name</strong></td>
+                                <td>Optional — only for human reference</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Subject(s)</strong></td>
+                                <td>Comma-separated subjects, e.g. <code>Mathematics,English,Science</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Marks Obtained</strong></td>
+                                <td>Comma-separated marks matching subject order, e.g. <code>85,78,90</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Marks</strong></td>
+                                <td>Per-subject totals e.g. <code>100,100,50</code> — or one value applies to all subjects</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top:1.2rem;">
+                        <strong style="font-size:0.88rem; color:var(--text-secondary,#64748b);">4 Sheets inside your Excel file:</strong>
+                        <div class="terminal-legend">
+                            <span class="terminal-chip"><i class="fas fa-table"></i> 1st Terminal</span>
+                            <span class="terminal-chip"><i class="fas fa-table"></i> 2nd Terminal</span>
+                            <span class="terminal-chip"><i class="fas fa-table"></i> 3rd Terminal</span>
+                            <span class="terminal-chip"><i class="fas fa-table"></i> Final Terminal</span>
+                        </div>
+                        <p style="font-size:0.82rem; color:var(--text-secondary,#64748b); margin-top:0.7rem;">
+                            Each sheet must have the same 5 columns. Sheets with no data rows are simply skipped.
+                            <br>
+                            <strong>Tips:</strong> Subject names must match the ones configured in the system (case-insensitive).
+                            Repeat the same student on each terminal sheet as needed — marks for each terminal are stored independently.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const dropZone  = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileCard  = document.getElementById('fileCard');
+        const fileName  = document.getElementById('fileName');
+        const fileSize  = document.getElementById('fileSize');
+        const removeBtn = document.getElementById('removeFileBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadActions = document.getElementById('uploadActions');
+        const progressWrap = document.getElementById('progressWrap');
+        const progressFill = document.getElementById('progressFill');
+        const progressPct  = document.getElementById('progressPct');
+        let selectedFile = null;
+
+        // ── download template (fetch → Blob → download) ──────────────────────
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            // Read CSRF token from cookie
+            const csrftoken = (document.cookie.match(/(^|;)\\s*csrftoken\\s*=\\s*([^;]+)/) || [])[2] || '';
+
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing…';
+
+            fetch('{% url "core:download_excel_template" %}', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: csrftoken ? { 'X-CSRFToken': csrftoken } : {},
+            })
+            .then(function(resp) {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-file-excel"></i> Download Excel Template';
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return resp.blob();
+            }.bind(this))
+            .then(function(blob) {
+                const href  = URL.createObjectURL(blob);
+                const a     = document.createElement('a');
+                a.href      = href;
+                a.download  = 'bulk_marks_upload_template.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(href);
+            }.bind(this))
+            .catch(function(err) {
+                alert('Download failed: ' + err.message + '\nTry refreshing the page and clicking again.');
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-file-excel"></i> Download Excel Template';
+            }.bind(this));
+        });
+
+        // ── drag & drop ──
+        dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop',  e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const f = e.dataTransfer.files[0];
+            if (f) pickFile(f);
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files[0]) pickFile(fileInput.files[0]);
+        });
+
+        function pickFile(f) {
+            const allowed = f.name.toLowerCase().endsWith('.xlsx') || f.name.toLowerCase().endsWith('.xls');
+            if (!allowed) {
+                alert('Please select a valid Excel file (.xlsx or .xls)');
+                return;
+            }
+            selectedFile = f;
+            fileName.textContent = f.name;
+            fileSize.textContent = (f.size / 1024).toFixed(1) + ' KB';
+            fileCard.classList.add('show');
+            uploadActions.style.display = 'flex';
+        }
+
+        removeBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            fileCard.classList.remove('show');
+            uploadActions.style.display = 'none';
+            progressWrap.classList.remove('show');
+        });
+
+        // ── upload ──
+        uploadBtn.addEventListener('click', () => {
+            if (!selectedFile) return;
+
+            // Read CSRF token from cookie
+            function getCookie(name) {
+                const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+                return match ? decodeURIComponent(match[2]) : '';
+            }
+            const csrftoken = getCookie('csrftoken');
+
+            const formData = new FormData();
+            formData.append('excel_file', selectedFile);
+            if (csrftoken) formData.append('csrfmiddlewaretoken', csrftoken);
+
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing…';
+            progressWrap.classList.add('show');
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '{% url "core:upload_marks_excel" %}', true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            if (csrftoken) xhr.setRequestHeader('X-CSRFToken', csrftoken);
+
+            xhr.upload.onprogress = e => {
+                if (e.lengthComputable) {
+                    const pct = Math.round(e.loaded / e.total * 100);
+                    progressFill.style.width = pct + '%';
+                    progressPct.textContent  = pct + '%';
+                }
+            };
+
+            xhr.onloadend = () => {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Marks';
+                progressFill.style.width = '100%';
+                progressPct.textContent  = 'Done!';
+
+                setTimeout(() => {
+                    window.location.href = '{% url "core:upload_marks_excel" %}';
+                }, 800);
+            };
+
+            xhr.onerror = () => {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Marks';
+                alert('Upload failed. Please check your connection and try again.');
+            };
+
+            xhr.send(formData);
+        });
+    </script>
+</body>
+</html>

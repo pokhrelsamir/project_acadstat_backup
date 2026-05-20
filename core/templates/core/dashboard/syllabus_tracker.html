@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syllabus Tracker — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--bg:#f8fafc;}
+        .sy-wrapper{max-width:1200px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:24px;background:white;border-radius:12px;padding:14px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .filter-row select,.filter-row input{padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;}
+        .sy-subject-block{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:24px;}
+        .sy-subject-header{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap;}
+        .sy-subject-header h2{margin:0;font-size:1.15rem;color:#1e293b;}
+        .sy-section-badge{padding:2px 10px;border-radius:8px;background:#e0e7ff;color:#3730a3;font-size:.78rem;font-weight:700;}
+        .progress-track{background:#e2e8f0;border-radius:999px;height:12px;margin-bottom:8px;overflow:hidden;}
+        .progress-fill{background:linear-gradient(135deg,var(--pri),var(--ok));height:100%;border-radius:999px;transition:width .5s;}
+        .progress-info{display:flex;justify-content:space-between;font-size:.82rem;color:#64748b;}
+        .progress-info strong{color:#1e293b;}
+        .chapter-list{margin-top:16px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;}
+        .chapter-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #f1f5f9;transition:.2s;}
+        .chapter-row:hover{background:#f8fafc;}
+        .chapter-row:last-child{border-bottom:none;}
+        .chk-wrap{flex-shrink:0;}
+        .chk-wrap input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:var(--ok);}
+        .ch-name{flex:1;font-size:.88rem;color:#374151;}
+        .ch-pct{font-size:.75rem;color:#64748b;background:#f1f5f9;padding:2px 8px;border-radius:8px;}
+        .ch-done{font-size:.72rem;color:var(--ok);font-weight:600;}
+        .ch-order{font-size:.72rem;color:#94a3b8;min-width:24px;text-align:center;}
+        @media(max-width:768px){.sy-wrapper{padding:15px;}.chapter-row{flex-wrap:wrap;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-book"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/lesson-plans/"><i class="fas fa-list"></i> Lesson Plans</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="sy-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-chart-bar"></i> Syllabus Tracker</h1>
+        </div>
+
+        <div class="filter-row">
+            <label style="font-size:.85rem;font-weight:600;color:#64748b;">Filter:</label>
+            <select onchange="applyFilters()" id="filterSubject">
+                <option value="">All Subjects</option>
+                {% for subj in available_subjects %}
+                <option value="{{ subj.id }}" {% if selected_subject == subj.id|stringformat:"s" %}selected{% endif %}>{{ subj.name }}</option>
+                {% endfor %}
+            </select>
+            <select onchange="applyFilters()" id="filterSection">
+                <option value="">All Sections</option>
+                {% for sec in available_sections %}
+                <option value="{{ sec }}" {% if selected_section == sec %}selected{% endif %}>{{ sec }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if grouped %}
+        {% for subj_name, blocks in grouped.items %}
+        {% for block in blocks %}
+        <div class="sy-subject-block">
+            <div class="sy-subject-header">
+                <h2><i class="fas fa-book" style="color:var(--pri);"></i> {{ block.subject.name }}</h2>
+                <span class="sy-section-badge">{{ block.class_section }}</span>
+                <span style="font-size:.85rem;color:#64748b;">{{ block.completed }}/{{ block.total }} chapters</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" style="width:{{ block.pct }}%;"></div></div>
+            <div class="progress-info">
+                <strong>{{ block.pct }}% complete</strong>
+                <strong>{{ block.pending }} remaining</strong>
+            </div>
+            {% if block.items %}
+            <div class="chapter-list">
+                {% for item in block.items %}
+                <div class="chapter-row">
+                    <div class="chk-wrap">
+                        <input type="checkbox" data-item-id="{{ item.id }}" {% if item.is_completed %}checked{% endif %}
+                               onchange="toggleComplete({{ item.id }})">
+                    </div>
+                    <span class="ch-order">{{ item.planned_order }}.</span>
+                    <span class="ch-name">{{ item.chapter_name }}</span>
+                    <span class="ch-pct">{{ item.actual_hours }}/{{ item.estimated_hours }} hrs</span>
+                    <span class="ch-done">{% if item.is_completed %}✅ Done{% endif %}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color:#94a3b8;font-size:.85rem;margin-top:10px;">No chapters in syllabus yet.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endfor %}
+        {% else %}
+        <div style="text-align:center;padding:80px;color:#94a3b8;">
+            <i class="fas fa-chart-bar" style="font-size:3rem;margin-bottom:12px;display:block;"></i>
+            <p>No syllabus coverage data. Add chapters via admin panel.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleComplete(itemId){}
+        function applyFilters(){}
+    </script>
+</body>
+</html>

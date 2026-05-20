@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Sheet — {{ student.name }} | {{ terminal }} Terminal</title>
+    <style>
+        @page { size: A4; margin: 18mm 15mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', 'Helvetica Neue', Arial, sans-serif; color: #1e293b; background: #fff; }
+        .page { max-width: 210mm; margin: 0 auto; padding: 0; }
+        /* ── Header ── */
+        .header { display:flex;align-items:center;gap:1.5rem;padding:1.5rem 1rem;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border-radius:12px 12px 0 0; }
+        .header-left { flex:1; }
+        .header-right { text-align:center; }
+        .header h1 { font-size:1.5rem;font-weight:700; }
+        .header .sub { font-size:.85rem;opacity:.85;margin-top:.25rem; }
+        .header .doc-id { font-size:.75rem;opacity:.7;margin-top:.5rem;font-family:monospace; }
+        .qr-img { width:90px;height:90px;background:#fff;border-radius:8px;padding:4px; }
+        .qr-img img { width:100%;height:100%; }
+        /* ── Meta grid ── */
+        .meta-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;padding:1.25rem 1rem;background:#f8faff;border-bottom:2px solid #667eea; }
+        .meta-item { text-align:center; }
+        .meta-label { font-size:.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.5px; }
+        .meta-value { font-size:1rem;font-weight:700;color:#1e293b; }
+        /* ── Table ── */
+        .marks-table { width:100%;border-collapse:collapse; }
+        .marks-table th { background:#4F46E5;color:#fff;padding:.65rem 1rem;font-size:.85rem;text-align:left; }
+        .marks-table th:nth-child(1){width:38%;}
+        .marks-table th:nth-child(2){width:14%;text-align:center;}
+        .marks-table th:nth-child(3){width:14%;text-align:center;}
+        .marks-table th:nth-child(4){width:14%;text-align:center;}
+        .marks-table th:nth-child(5){width:14%;text-align:center;}
+        .marks-table th:nth-child(6){width:6%;text-align:center;}
+        .marks-table td { padding:.6rem 1rem;border-bottom:1px solid #e2e8f0;font-size:.9rem; }
+        .marks-table td.text { color:#1e293b; }
+        .marks-table td.num { text-align:center;font-weight:600; }
+        .marks-table td.grade { text-align:center;font-weight:700; }
+        .marks-table tr:nth-child(odd) td { background:#f8faff; }
+        .marks-table tr.total-row td { background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-weight:700; }
+        /* ── Footer ── */
+        .footer { padding:1rem;background:#f8faff;border-radius:0 0 12px 12px;text-align:center;color:#94a3b8;font-size:.75rem;display:flex;justify-content:space-between; }
+        /* ── Pass/Fail badge ── */
+        .badge { padding:3px 10px;border-radius:20px;font-size:.8rem;font-weight:700; }
+        .badge-p { background:#dcfce7;color:#15803d; }
+        .badge-f { background:#fee2e2;color:#b91c1c; }
+    </style>
+</head>
+<body>
+<div class="page">
+    {% if rows %}
+    <div class="header">
+        <div class="header-left">
+            <h1>SOCH COLLEGE</h1>
+            <div class="sub">RANIPAWA-12 · POKHARA · ESTD: 2020</div>
+            <div class="doc-id">Document #: {{ doc_id }}</div>
+        </div>
+        <div class="header-right">
+            <div class="qr-img"><img src="data:image/png;base64,{{ qr_code }}" alt="QR"></div>
+            <div style="font-size:.7rem;margin-top:.25rem;opacity:.8;">Valid Certificate</div>
+        </div>
+    </div>
+
+    <div class="meta-grid">
+        <div class="meta-item">
+            <div class="meta-label">Student</div>
+            <div class="meta-value">{{ student.name }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Roll Number</div>
+            <div class="meta-value">{{ student.roll_number }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Class</div>
+            <div class="meta-value">{{ student.student_class }} {{ student.section }}</div>
+        </div>
+        <div class="meta-item">
+            <div class="meta-label">Terminal</div>
+            <div class="meta-value">{{ terminal }}</div>
+        </div>
+    </div>
+
+    <table class="marks-table">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th style="text-align:center;">Code</th>
+                <th style="text-align:center;">Marks Obtained</th>
+                <th style="text-align:center;">Total Marks</th>
+                <th style="text-align:center;">Percentage</th>
+                <th style="text-align:center;">Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+        <tr>
+            <td class="text">{{ row.subject }} ({{ row.code }})</td>
+            <td class="num">{{ row.code }}</td>
+            <td class="num">{{ row.marks }} / {{ row.total }}</td>
+            <td class="num">{{ row.total }}</td>
+            <td class="num">{{ row.percentage }}%</td>
+            <td class="grade">
+                {% if row.percentage >= 40 %}
+                <span class="badge badge-p">{{ row.grade }}</span>
+                {% else %}
+                <span class="badge badge-f">{{ row.grade }}</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td colspan="2" style="font-weight:700;">GRAND TOTAL</td>
+            <td class="num">{{ total_obt }}</td>
+            <td class="num">{{ total_pos }}</td>
+            <td class="num">{{ overall_pct }}%</td>
+            <td class="grade">{{ overall_grade }}</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <span>Generated: {{ generated_at }}</span>
+        <span>Academic Year: {{ academic_year }}</span>
+        <span>SOCH COLLEGE — AcadStat System</span>
+    </div>
+    {% else %}
+    <div style="padding:2rem;text-align:center;">
+        <p>No marks found for this student and terminal.</p>
+    </div>
+    {% endif %}
+</div>
+<script>window.onload=function(){window.print();}</script>
+</body>
+</html>

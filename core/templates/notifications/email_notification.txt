@@ -1,0 +1,16 @@
+AcadStat Notification
+==========================================
+
+{{ title }}
+
+Hello {{ student.name }},
+
+{{ message }}
+
+{% if link_url %}
+View details: {{ request.scheme }}://{{ request.get_host }}{{ link_url }}
+{% endif %}
+
+---
+This is an automated notification from AcadStat.
+If you have any questions, please contact your teacher or the administration.

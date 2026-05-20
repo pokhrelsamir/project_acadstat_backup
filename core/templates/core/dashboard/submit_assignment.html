@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Assignment — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--bg:#f8fafc;}
+        .sm-wrapper{max-width:720px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .form-card{background:white;border-radius:20px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.1);border:1px solid #e2e8f0;}
+        .form-card h2{text-align:center;color:#1e293b;margin-bottom:8px;}
+        .asg-meta{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:24px;justify-content:center;}
+        .meta-tag{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:12px;background:#f1f5f9;font-size:.88rem;color:#64748b;}
+        .meta-tag i{color:var(--pri);}
+        .sub-badge{display:inline-flex;padding:6px 16px;border-radius:12px;background:rgba(102,126,234,.1);color:var(--pri);font-weight:600;font-size:.9rem;}
+        .form-group{margin-bottom:20px;}
+        .form-group label{display:block;font-size:.88rem;font-weight:600;color:#374151;margin-bottom:6px;}
+        .form-group input,.form-group textarea{width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;font-family:inherit;transition:.3s;}
+        .form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(102,126,234,.1);}
+        .form-group textarea{min-height:120px;resize:vertical;}
+        .upload-box{border:2px dashed #e2e8f0;border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:.3s;}
+        .upload-box:hover{border-color:var(--pri);background:rgba(102,126,234,.02);}
+        .file-input{display:none;}
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;width:100%;justify-content:center;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(102,126,234,.4);}
+        .sub-back{margin-top:16px;font-size:.85rem;color:#64748b;}
+        .sub-back a{color:var(--pri);text-decoration:none;}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-paper-plane"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/student-assignments/"><i class="fas fa-arrow-left"></i> My Assignments</a>
+            <a href="/student-dashboard/"><i class="fas fa-dashboard"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="sm-wrapper">
+        <div class="form-card">
+            <h2><i class="fas fa-upload"></i> Submit Assignment</h2>
+            {% if assignment %}
+            <div class="asg-meta">
+                <span class="sub-badge">{{ assignment.subject.name }}</span>
+                <span class="meta-tag"><i class="fas fa-star"></i> {{ assignment.total_marks }} marks</span>
+                <span class="meta-tag"><i class="fas fa-calendar"></i> Due: {{ assignment.due_date|date:"M d, Y" }}</span>
+            </div>
+            <h3 style="text-align:center;color:#1e293b;margin-bottom:24px;">{{ assignment.title }}</h3>
+            {% if assignment.description %}
+            <div style="background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:24px;color:#374151;line-height:1.7;font-size:.95rem;">{{ assignment.description }}</div>
+            {% endif %}
+            {% endif %}
+            <form method="post" enctype="multipart/form-data">{% csrf_token %}
+                <div class="form-group">
+                    <label><i class="fas fa-file"></i> Answer File (PDF / DOC / Image)</label>
+                    <label class="upload-box" for="fileInput">
+                        <i class="fas fa-cloud-upload-alt" style="font-size:2rem;color:#94a3b8;margin-bottom:8px;display:block;"></i>
+                        <span style="color:#64748b;" id="fileName">Click to upload or drag & drop</span>
+                        <input type="file" name="file" id="fileInput" class="file-input" accept=".pdf,.doc,.docx,.txt,.jpg,.png,.jpeg">
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-keyboard"></i> Or Type Your Answer</label>
+                    <textarea name="text_answer" placeholder="Type or paste your answer here..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Submit Assignment</button>
+            </form>
+            <div class="sub-back">
+                <a href="/student-assignments/">← Back to Assignments</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function() {
+            document.getElementById('fileName').textContent = this.files[0].name || 'Click to upload or drag & drop';
+        });
+    </script>
+</body>
+</html>

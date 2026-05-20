@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard - Academic System</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#667eea">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Theme detection script -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const theme = savedTheme || 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+    
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .student-dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Welcome Section */
+        .welcome-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        
+        .welcome-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .welcome-text h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-text p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        /* Profile Picture */
+        .welcome-profile {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .profile-pic-container {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .profile-pic {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-pic-placeholder {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            border: 4px solid white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 900px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+         .stat-card:hover {
+             transform: translateY(-5px);
+             box-shadow: var(--shadow-lg);
+             background: var(--bg-card-hover);
+         }
+        
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-icon.blue { background: #dbeafe; }
+        .stat-icon.green { background: #d1fae5; }
+        .stat-icon.purple { background: #ede9fe; }
+        .stat-icon.orange { background: #fef3c7; }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.3rem;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* Charts Section */
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 900px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .chart-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .chart-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+        
+        /* Results Table */
+        .results-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .results-section h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .results-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .results-table th:first-child {
+            border-radius: 10px 0 0 10px;
+        }
+        
+        .results-table th:last-child {
+            border-radius: 0 10px 10px 0;
+        }
+        
+        .results-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .results-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+         .results-table tr:hover {
+             background: var(--table-hover);
+         }
+        
+        .grade-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .grade-badge.pass {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .grade-badge.fail {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Navigation for Students */
+        .student-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .nav-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        
+        .nav-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+        
+         .no-data svg {
+             width: 80px;
+             height: 80px;
+             margin-bottom: 1rem;
+             opacity: 0.5;
+         }
+         
+         /* Notifications Dropdown */
+         .notifications-btn:hover {
+             border-color: #667eea !important;
+             color: #667eea !important;
+         }
+         
+         .notification-badge {
+             animation: pulse 2s infinite;
+         }
+         
+         @keyframes pulse {
+             0% { transform: scale(1); }
+             50% { transform: scale(1.1); }
+             100% { transform: scale(1); }
+         }
+         
+         .notification-item {
+             padding: 0.75rem 1rem;
+             border-bottom: 1px solid var(--border-color);
+             transition: background 0.2s;
+             cursor: pointer;
+         }
+         
+         .notification-item:hover {
+             background: var(--bg-card-hover);
+         }
+         
+         .notification-item.unread {
+             background: rgba(102, 126, 234, 0.05);
+             border-left: 3px solid #667eea;
+         }
+         
+         .notification-item:last-child {
+             border-bottom: none;
+         }
+         
+         .notification-title {
+             font-weight: 600;
+             color: var(--text-primary);
+             font-size: 0.9rem;
+             margin-bottom: 0.25rem;
+         }
+         
+         .notification-message {
+             color: var(--text-secondary);
+             font-size: 0.85rem;
+             line-height: 1.4;
+         }
+         
+         .notification-meta {
+             font-size: 0.75rem;
+             color: var(--text-secondary);
+             margin-top: 0.4rem;
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+         }
+         
+         .notification-type-icon {
+             margin-right: 0.5rem;
+         }
+         
+         .type-info { color: #3b82f6; }
+         .type-success { color: #10b981; }
+         .type-warning { color: #f59e0b; }
+         .type-danger { color: #ef4444; }
+         
+         .empty-notifications {
+             padding: 2rem;
+             text-align: center;
+             color: var(--text-secondary);
+         }
+         
+         .empty-notifications svg {
+             width: 60px;
+             height: 60px;
+             opacity: 0.5;
+             margin-bottom: 0.5rem;
+         }
+         
+         .mark-all-read-container {
+             padding: 0.5rem 1rem;
+             text-align: center;
+             border-top: 1px solid var(--border-color);
+         }
+        
+        /* Password Change Modal */
+        .password-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .password-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .password-modal-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 400px;
+            transform: scale(0.9);
+            transition: all 0.3s;
+        }
+        
+        .password-modal-overlay.active .password-modal-content {
+            transform: scale(1);
+        }
+        
+        .password-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .password-modal-header h3 {
+            font-size: 1.4rem;
+            color: var(--text-primary);
+        }
+        
+        .password-modal-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+        
+        .password-modal-close:hover {
+            color: var(--text-primary);
+        }
+        
+        .password-form-group {
+            margin-bottom: 20px;
+        }
+        
+        .password-form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .password-form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            transition: all 0.3s;
+        }
+        
+        .password-form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .password-modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+        
+        .password-modal-actions button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .btn-password-cancel {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+        
+        .btn-password-cancel:hover {
+            background: var(--border-color);
+        }
+        
+        .btn-password-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-password-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .password-error {
+            color: #ef4444;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            display: none;
+        }
+        
+        .password-success {
+            color: #10b981;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            display: none;
+        }
+        
+        .btn-change-password {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .btn-change-password:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+     <nav class="navbar">
+         <h2 class="logo">🎓 AcadStat </h2>
+         <div class="nav-links">
+             <a href="/">Home</a>
+             {% if user.is_authenticated %}
+                 <a href="/dashboard/">Dashboard</a>
+                 <a href="/logout/">Logout</a>
+             {% else %}
+                 <a href="/login/">Login</a>
+             {% endif %}
+             
+             <!-- Notifications Dropdown -->
+             <div class="notifications-dropdown" id="notificationsDropdown" style="position: relative; display: inline-block;">
+                 <button class="notifications-btn" id="notificationsBtn" aria-label="Notifications" style="position: relative; background: var(--card-bg); border: 2px solid var(--border-color); border-radius: 10px; padding: 0.5rem 0.75rem; cursor: pointer; color: var(--text-primary); transition: all 0.3s ease;">
+                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                     </svg>
+                     {% if total_unread > 0 %}
+                     <span class="notification-badge" id="notificationBadge" style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 18px; text-align: center;">{{ total_unread }}</span>
+                     {% endif %}
+                 </button>
+                 
+                 <!-- Notifications Panel -->
+                 <div id="notificationsPanel" style="display: none; position: absolute; top: 100%; right: 0; width: 380px; max-height: 500px; overflow-y: auto; background: var(--card-bg); border: 2px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; margin-top: 0.5rem;">
+                     <div class="notifications-header" style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                         <h4 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">Notifications</h4>
+                         {% if total_unread > 0 %}
+                         <button id="markAllReadBtn" style="background: none; border: none; color: #667eea; font-size: 0.8rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(102,126,234,0.1)'" onmouseout="this.style.background='transparent'">Mark all read</button>
+                         {% endif %}
+                     </div>
+                     <div id="notificationsList" style="padding: 0.5rem;">
+                         <!-- Notifications will be loaded here by JS -->
+                         <div style="padding: 1rem; text-align: center; color: var(--text-secondary);">Loading notifications...</div>
+                     </div>
+                 </div>
+             </div>
+             
+             <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                 <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                     <circle cx="12" cy="12" r="5"/>
+                     <line x1="12" y1="1" x2="12" y2="3"/>
+                     <line x1="12" y1="21" x2="12" y2="23"/>
+                     <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                     <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                     <line x1="1" y1="12" x2="3" y2="12"/>
+                     <line x1="21" y1="12" x2="23" y2="12"/>
+                     <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                 </svg>
+                 <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                 </svg>
+             </button>
+         </div>
+     </nav>
+
+    <!-- Page Content -->
+    <div class="container">
+        <div class="student-dashboard">
+            
+            {% if error %}
+            <div class="no-data">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <h3>{{ error }}</h3>
+                <p>Please contact your administrator.</p>
+            </div>
+            {% else %}
+            
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <div class="welcome-content">
+                    <div class="welcome-text">
+                        <h1>Welcome, {{ student.name }}!</h1>
+                        <p>Class: {{ student.student_class }} | Section: {{ student.section }}</p>
+                        <p>Roll No: {{ student.roll_number|default:"N/A" }}</p>
+                        <button class="btn-change-password" onclick="openPasswordModal()" style="margin-top: 10px;">
+                            🔐 Change Password
+                        </button>
+                    </div>
+                    <div class="welcome-profile">
+                        {% if student.image %}
+                        <div class="profile-pic-container">
+                            <img src="{{ student.image.url }}" alt="Profile Picture" class="profile-pic">
+                        </div>
+                        {% else %}
+                        <div class="profile-pic-placeholder">
+                            <span>{{ student.name|first|upper }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">📚</div>
+                    <div class="stat-value">{{ total_subjects }}</div>
+                    <div class="stat-label">Subjects</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">🏆</div>
+                    <div class="stat-value">{{ overall_percentage }}%</div>
+                    <div class="stat-label">Overall Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon purple">📊</div>
+                    <div class="stat-value">{{ terminal_marks_obtained|floatformat:0 }}/{{ terminal_total_marks|floatformat:0 }}</div>
+                    <div class="stat-label">Marks ({{ selected_terminal }} Terminal)</div>
+                </div>
+            </div>
+            
+            <!-- Terminal Selection Section -->
+            <div class="terminal-selection-section" style="margin-bottom: 2rem;">
+                <div class="card" style="background: var(--card-bg); border-radius: 16px; padding: 1.5rem; border: 1px solid var(--border-color);">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        📖 Subject Marks by Terminal
+                    </h3>
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <label for="terminalSelect" style="font-weight: 500; color: var(--text-secondary);">Select Terminal:</label>
+                        <select id="terminalSelect" onchange="changeTerminal(this.value)" style="padding: 0.6rem 1.2rem; border-radius: 10px; border: 2px solid var(--border-color); background: var(--input-bg); color: var(--text-primary); font-size: 1rem; cursor: pointer;">
+                            {% for terminal in terminal_choices %}
+                            <option value="{{ terminal }}" {% if terminal == selected_terminal %}selected{% endif %}>{{ terminal }} Terminal</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Section -->
+            {% if terminal_data %}
+            <div class="charts-section">
+                <!-- Terminal Performance Chart -->
+                <div class="chart-card">
+                    <h3>📈 Terminal-wise Performance</h3>
+                    <div class="chart-container">
+                        <canvas id="terminalChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Subject Performance Chart -->
+                <div class="chart-card">
+                    <h3>📊 Subject-wise Performance</h3>
+                    <div class="chart-container">
+                        <canvas id="subjectChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Results Table -->
+            {% if student_results %}
+            <div class="results-section">
+                <h3>📋 My Results - {{ selected_terminal }} Terminal</h3>
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>S.N.</th>
+                            <th>Subject</th>
+                            <th>Terminal</th>
+                            <th>Marks</th>
+                            <th>Percentage</th>
+                            <th>Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in student_results %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ result.subject.name }}</td>
+                            <td>{{ result.terminal }}</td>
+                            <td>{{ result.marks_obtained|floatformat:1 }}/{{ result.total_marks|floatformat:1 }}</td>
+                            <td>
+                                {% widthratio result.marks_obtained result.total_marks 100 as pct %}
+                                {{ pct|floatformat:1 }}%
+                            </td>
+                            <td>
+                                {% widthratio result.marks_obtained result.total_marks 100 as pct %}
+                                {% with pct|add:0 as pct_num %}
+                                {% if pct_num >= 40 %}
+                                <span class="grade-badge pass">P</span>
+                                {% else %}
+                                <span class="grade-badge fail">F</span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="no-data">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                <h3>No Results for {{ selected_terminal }} Terminal</h3>
+                <p>Your exam results for {{ selected_terminal }} terminal will appear here once they are published.</p>
+            </div>
+            {% endif %}
+            
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Charts Data -->
+    <script>
+        const terminalData = {{ terminal_data_json|safe }};
+        const subjectData = {{ subject_data_json|safe }};
+    </script>
+    
+    <!-- Chart Initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle
+            const themeToggle = document.getElementById('themeToggle');
+            const html = document.documentElement;
+            
+            updateThemeIcon(html.getAttribute('data-theme'));
+            
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+                
+                // Update charts for theme
+                if (window.terminalChart) window.terminalChart.destroy();
+                if (window.subjectChart) window.subjectChart.destroy();
+                initCharts(newTheme);
+            });
+            
+            function updateThemeIcon(theme) {
+                const sunIcon = themeToggle.querySelector('.sun-icon');
+                const moonIcon = themeToggle.querySelector('.moon-icon');
+                if (theme === 'dark') {
+                    sunIcon.style.display = 'block';
+                    moonIcon.style.display = 'none';
+                } else {
+                    sunIcon.style.display = 'none';
+                    moonIcon.style.display = 'block';
+                }
+            }
+            
+            function initCharts(theme) {
+                const isDark = theme === 'dark';
+                const textColor = isDark ? '#e2e8f0' : '#334155';
+                const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+                
+                // Terminal Chart
+                const terminalCtx = document.getElementById('terminalChart');
+                if (terminalCtx && typeof terminalData !== 'undefined') {
+                    const terminals = Object.keys(terminalData);
+                    const percentages = terminals.map(t => terminalData[t].percentage);
+                    
+                    window.terminalChart = new Chart(terminalCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: terminals.map(t => t + ' Terminal'),
+                            datasets: [{
+                                label: 'Percentage (%)',
+                                data: percentages,
+                                backgroundColor: [
+                                    'rgba(102, 126, 234, 0.8)',
+                                    'rgba(118, 75, 162, 0.8)',
+                                    'rgba(236, 72, 153, 0.8)',
+                                    'rgba(34, 197, 94, 0.8)'
+                                ],
+                                borderRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: { color: textColor },
+                                    grid: { color: gridColor }
+                                },
+                                x: {
+                                    ticks: { color: textColor },
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Subject Chart
+                const subjectCtx = document.getElementById('subjectChart');
+                if (subjectCtx && typeof subjectData !== 'undefined' && Object.keys(subjectData).length > 0) {
+                    const subjects = Object.keys(subjectData);
+                    const avgPercentages = subjects.map(s => {
+                        const marks = subjectData[s];
+                        return marks.reduce((sum, m) => sum + m.percentage, 0) / marks.length;
+                    });
+                    
+                    window.subjectChart = new Chart(subjectCtx, {
+                        type: 'line',
+                        data: {
+                            labels: subjects,
+                            datasets: [{
+                                label: 'Average %',
+                                data: avgPercentages,
+                                borderColor: 'rgba(102, 126, 234, 1)',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                                pointRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: { color: textColor },
+                                    grid: { color: gridColor }
+                                },
+                                x: {
+                                    ticks: { color: textColor },
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            
+            // Initialize charts
+            initCharts(html.getAttribute('data-theme'));
+        });
+    </script>
+    
+    <!-- Password Change Modal -->
+    <div class="password-modal-overlay" id="passwordModal">
+        <div class="password-modal-content">
+            <div class="password-modal-header">
+                <h3>🔐 Change Password</h3>
+                <button class="password-modal-close" onclick="closePasswordModal()">×</button>
+            </div>
+            <form id="passwordForm">
+                <div class="password-form-group">
+                    <label>Current Password</label>
+                    <input type="password" id="currentPassword" required>
+                </div>
+                <div class="password-form-group">
+                    <label>New Password</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div class="password-form-group">
+                    <label>Confirm New Password</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <div class="password-error" id="passwordError"></div>
+                <div class="password-success" id="passwordSuccess"></div>
+                <div class="password-modal-actions">
+                    <button type="button" class="btn-password-cancel" onclick="closePasswordModal()">Cancel</button>
+                    <button type="submit" class="btn-password-save">Save Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Pass Django data to JavaScript
+        const terminalDataJson = '{{ terminal_data_json|escapejs }}';
+        const subjectDataJson = '{{ subject_data_json|escapejs }}';
+        
+        // Password Modal Functions
+        function openPasswordModal() {
+            document.getElementById('passwordModal').classList.add('active');
+        }
+        
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('active');
+            document.getElementById('passwordForm').reset();
+            document.getElementById('passwordError').style.display = 'none';
+            document.getElementById('passwordSuccess').style.display = 'none';
+        }
+        
+        // Terminal change function
+        function changeTerminal(terminal) {
+            // Reload the page with the selected terminal as a GET parameter
+            const url = new URL(window.location.href);
+            url.searchParams.set('terminal', terminal);
+            window.location.href = url.toString();
+        }
+        
+        document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorEl = document.getElementById('passwordError');
+            const successEl = document.getElementById('passwordSuccess');
+            
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+            
+            if (newPassword !== confirmPassword) {
+                errorEl.textContent = 'New passwords do not match';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            if (newPassword.length < 4) {
+                errorEl.textContent = 'Password must be at least 4 characters';
+                errorEl.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/change-password/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    successEl.textContent = data.message;
+                    successEl.style.display = 'block';
+                    setTimeout(() => closePasswordModal(), 1500);
+                } else {
+                    errorEl.textContent = data.message;
+                    errorEl.style.display = 'block';
+                }
+            } catch (error) {
+                errorEl.textContent = 'An error occurred. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        });
+        
+         // Close modal on outside click
+         document.getElementById('passwordModal').addEventListener('click', function(e) {
+             if (e.target === this) {
+                 closePasswordModal();
+             }
+         });
+         
+         // Notifications Dropdown
+         const notificationsBtn = document.getElementById('notificationsBtn');
+         const notificationsPanel = document.getElementById('notificationsPanel');
+         const notificationsList = document.getElementById('notificationsList');
+         const markAllReadBtn = document.getElementById('markAllReadBtn');
+         const notificationBadge = document.getElementById('notificationBadge');
+         
+         if (notificationsBtn) {
+             // Toggle dropdown visibility
+             notificationsBtn.addEventListener('click', function(e) {
+                 e.stopPropagation();
+                 const isVisible = notificationsPanel.style.display === 'block';
+                 notificationsPanel.style.display = isVisible ? 'none' : 'block';
+                 if (!isVisible) {
+                     loadNotifications();
+                 }
+             });
+             
+             // Close dropdown when clicking outside
+             document.addEventListener('click', function(e) {
+                 if (!notificationsPanel.contains(e.target) && e.target !== notificationsBtn) {
+                     notificationsPanel.style.display = 'none';
+                 }
+             });
+             
+             // Prevent dropdown from closing when clicking inside
+             notificationsPanel.addEventListener('click', function(e) {
+                 e.stopPropagation();
+             });
+         }
+         
+         // Load notifications via AJAX
+         async function loadNotifications() {
+             try {
+                 const response = await fetch('/api/student-notifications/?_=' + Date.now());
+                 const data = await response.json();
+                 
+                 if (data.success) {
+                     renderNotifications(data.notifications, data.unread_count);
+                 } else {
+                     notificationsList.innerHTML = '<div class="empty-notifications"><p>No notifications available</p></div>';
+                 }
+             } catch (error) {
+                 console.error('Error loading notifications:', error);
+                 notificationsList.innerHTML = '<div class="empty-notifications"><p>Failed to load notifications</p></div>';
+             }
+         }
+         
+         // Render notifications list
+         function renderNotifications(notifications, unreadCount) {
+             if (!notifications || notifications.length === 0) {
+                 notificationsList.innerHTML = `
+                     <div class="empty-notifications">
+                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                         </svg>
+                         <p>No notifications yet</p>
+                     </div>
+                 `;
+                 if (notificationBadge) notificationBadge.style.display = 'none';
+                 return;
+             }
+             
+             let html = '';
+             notifications.forEach((notif, index) => {
+                 const isUnread = !notif.is_read ? 'unread' : '';
+                 const iconMap = {
+                     'info': '<span class="type-icon type-info">ℹ️</span>',
+                     'success': '<span class="type-icon type-success">✅</span>',
+                     'warning': '<span class="type-icon type-warning">⚠️</span>',
+                     'danger': '<span class="type-icon type-danger">🚨</span>'
+                 };
+                 const icon = iconMap[notif.type] || iconMap['info'];
+                 const timeAgo = getTimeAgo(notif.created_at);
+                 
+                 html += `
+                     <div class="notification-item ${isUnread}" data-id="${notif.id}" onclick="markAsReadAndNavigate(${notif.id}, '${notif.link_url || ''}')">
+                         <div class="notification-title">
+                             ${icon} ${notif.title}
+                         </div>
+                         <div class="notification-message">${notif.message}</div>
+                         <div class="notification-meta">
+                             <span>${timeAgo}</span>
+                             ${notif.sender ? `<span>From: ${notif.sender}</span>` : ''}
+                         </div>
+                     </div>
+                 `;
+             });
+             
+             notificationsList.innerHTML = html;
+             
+             // Update badge
+             if (unreadCount > 0) {
+                 if (notificationBadge) {
+                     notificationBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                     notificationBadge.style.display = 'block';
+                 }
+             } else {
+                 if (notificationBadge) notificationBadge.style.display = 'none';
+             }
+         }
+         
+         // Mark single notification as read and navigate
+         async function markAsReadAndNavigate(notificationId, linkUrl) {
+             // Mark as read immediately for UI feedback
+             const item = notificationsList.querySelector(`[data-id="${notificationId}"]`);
+             if (item) {
+                 item.classList.remove('unread');
+                 item.style.opacity = '0.7';
+             }
+             
+             // Send API call (fire and forget, don't block navigation if link exists)
+             fetch(`/api/mark-notification-read/${notificationId}/`, {
+                 method: 'POST',
+                 headers: {
+                     'X-CSRFToken': '{{ csrf_token }}',
+                     'Content-Type': 'application/json'
+                 }
+             }).catch(err => console.warn('Failed to mark notification read:', err));
+             
+             // Update badge
+             if (notificationBadge) {
+                 const currentCount = parseInt(notificationBadge.textContent) || 0;
+                 const newCount = Math.max(0, currentCount - 1);
+                 notificationBadge.textContent = newCount > 99 ? '99+' : newCount;
+                 if (newCount === 0) notificationBadge.style.display = 'none';
+             }
+             
+             // Navigate if link provided
+             if (linkUrl) {
+                 window.location.href = linkUrl;
+             }
+         }
+         
+         // Mark all as read
+         if (markAllReadBtn) {
+             markAllReadBtn.addEventListener('click', async function() {
+                 try {
+                     const response = await fetch('/api/mark-all-notifications-read/', {
+                         method: 'POST',
+                         headers: {
+                             'X-CSRFToken': '{{ csrf_token }}',
+                             'Content-Type': 'application/json'
+                         }
+                     });
+                     
+                     const data = await response.json();
+                     if (data.success) {
+                         // Mark all items as read in UI
+                         const items = notificationsList.querySelectorAll('.notification-item');
+                         items.forEach(item => {
+                             item.classList.remove('unread');
+                             item.style.opacity = '0.7';
+                         });
+                         if (notificationBadge) notificationBadge.style.display = 'none';
+                         markAllReadBtn.style.display = 'none';
+                     }
+                 } catch (error) {
+                     console.error('Error marking all as read:', error);
+                 }
+             });
+         }
+         
+         // Format time ago
+         function getTimeAgo(dateStr) {
+             const date = new Date(dateStr);
+             const now = new Date();
+             const seconds = Math.floor((now - date) / 1000);
+             
+             if (seconds < 60) return 'Just now';
+             
+             const minutes = Math.floor(seconds / 60);
+             if (minutes < 60) return `${minutes}m ago`;
+             
+             const hours = Math.floor(minutes / 60);
+             if (hours < 24) return `${hours}h ago`;
+             
+             const days = Math.floor(hours / 24);
+             if (days < 7) return `${days}d ago`;
+             
+             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+         }
+         
+          // Periodic refresh of notifications (every 60 seconds)
+          setInterval(loadNotifications, 60000);
+      </script>
+
+    <!-- Service Worker Registration (PWA) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('{% static "js/sw.js" %}')
+                    .then(function(reg) { console.log('SW registered:', reg.scope); })
+                    .catch(function(err) { console.log('SW registration failed:', err); });
+            });
+        }
+    </script>
+</body>
+</html>

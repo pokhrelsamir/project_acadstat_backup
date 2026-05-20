@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="content=device-width, initial-scale=1.0">
+    <title>Parent Verification — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-user-check"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div style="max-width:500px;margin:0 auto;padding:60px 20px;">
+        <div class="card shadow-sm"><div class="card-body p-4">
+            <h4 class="text-center mb-4"><i class="fas fa-user-check"></i> Verify Parent Account</h4>
+            <p class="text-muted text-center">Enter the verification token sent to your registered contact.</p>
+            {% if messages %}{% for m in messages %}
+            <div class="alert alert-{{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+            <form method="post">{% csrf_token %}
+                <div class="mb-3"><label class="form-label">Verification Token</label>
+                    <input type="text" class="form-control" name="token" placeholder="Enter token" required></div>
+                <button type="submit" class="btn btn-primary w-100">Verify Account</button>
+            </form>
+        </div></div>
+    </div>
+</body>
+</html>

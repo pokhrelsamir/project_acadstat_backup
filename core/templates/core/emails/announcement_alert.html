@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>New Announcement</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: {% if priority == 'urgent' %}#dc2626{% elif priority == 'high' %}#f59e0b{% else %}#6366f1{% endif %}; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="margin:0;">&#128226; New Announcement</h1>
+    <p style="margin:5px 0 0;">{{ audience }}</p>
+  </div>
+  <div style="background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none;">
+    <h2 style="color:#1f2937; margin-top:0;">{{ title }}</h2>
+    <p style="color:#4b5563; line-height:1.6;">{{ content }}</p>
+    {% if attachment_link %}
+    <div style="text-align:center; margin: 15px 0;">
+      <a href="{{ attachment_link }}" style="background:#6366f1; color:#fff; padding:10px 20px; border-radius:6px; text-decoration:none; font-weight:bold;">View Attachment</a>
+    </div>
+    {% endif %}
+    <p style="font-size:0.85em; color:#6b7280;">Posted by: {{ published_by }} on {{ published_at }}</p>
+  </div>
+</body>
+</html>

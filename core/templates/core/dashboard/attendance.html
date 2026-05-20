@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .att-wrapper{max-width:1400px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .date-nav{display:flex;align-items:center;gap:12px;}
+        .date-nav a{padding:8px 16px;border-radius:10px;background:white;border:2px solid #e2e8f0;color:#1e293b;text-decoration:none;font-weight:600;transition:.3s;}
+        .date-nav a:hover{border-color:var(--pri);color:var(--pri);}
+        .date-display{font-size:1.1rem;font-weight:700;color:#1e293b;}
+        .filter-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px;background:white;border-radius:12px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .filter-row select,.filter-row input{padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;}
+        .filter-row button{padding:8px 18px;background:var(--pri);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;}
+        .att-card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;overflow-x:auto;}
+        .att-table{width:100%;border-collapse:collapse;}
+        .att-table th{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;padding:14px;text-align:center;font-weight:600;font-size:.85rem;}
+        .att-table td{padding:12px 8px;border-bottom:1px solid #f1f5f9;font-size:.9rem;color:#374151;}
+        .att-table tr:hover td{background:#f8fafc;}
+        .stu-cell{display:flex;align-items:center;gap:8px;justify-content:center;text-align:left;}
+        .stu-ava{width:30px;height:30px;border-radius:50%;background:var(--pri);display:flex;align-items:center;justify-content:center;color:white;font-size:.7rem;font-weight:700;flex-shrink:0;}
+        .status-btn{padding:8px 16px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer;font-size:.82rem;font-weight:600;transition:.2s;background:white;width:100px;text-align:center;}
+        .status-btn:hover{transform:translateY(-1px);}
+        .btn-present{border-color:var(--ok);color:var(--ok);background:#f0fdf4;}
+        .btn-absent{border-color:var(--err);color:var(--err);background:#fef2f2;}
+        .btn-late{border-color:var(--warn);color:var(--warn);background:#fffbeb;}
+        .btn-excused{border-color:#6366f1;color:#6366f1;background:#eef2ff;}
+        .subject-pill{display:inline-block;padding:2px 10px;border-radius:20px;background:#f1f5f9;font-size:.78rem;color:#64748b;margin-bottom:6px;}
+        .subj-row{margin-bottom:20px;}
+        .subj-row:last-child{margin-bottom:0;}
+        @media(max-width:768px){.att-wrapper{padding:15px;}.filter-row{flex-direction:column;}.status-btn{width:80px;font-size:.75rem;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-user-check"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/add-marks/"><i class="fas fa-plus-circle"></i> Add Marks</a>
+            <a href="/marks-list/"><i class="fas fa-list"></i> Marks</a>
+            <a href="/course-materials/"><i class="fas fa-folder-open"></i> Materials</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="att-wrapper">
+        <form method="get" class="filter-row">
+            <label style="font-size:.85rem;font-weight:600;color:#64748b;">Date:</label>
+            <input type="date" name="start_date" value="{{ start|date:'Y-m-d' }}" onchange="this.form.submit()">
+            <span style="color:#94a3b8;">to</span>
+            <input type="date" name="end_date" value="{{ end|date:'Y-m-d' }}" onchange="this.form.submit()">
+            <select name="student_class" onchange="this.form.submit()">
+                <option value="">All Classes</option>
+                {% for cls in available_classes %}
+                    <option value="{{ cls }}" {% if selected_class == cls %}selected{% endif %}>{{ cls }}</option>
+                {% endfor %}
+            </select>
+            <select name="subject" onchange="this.form.submit()">
+                <option value="">All Subjects</option>
+                {% for s in teacher_subjects %}
+                    <option value="{{ s.id }}" {% if selected_subject == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+
+        <form method="post" id="attForm">
+            {% csrf_token %}
+            <input type="hidden" name="att_date" value="{{ today }}">
+            <input type="hidden" name="subject_id" value="{{ selected_subject }}">
+            <div class="att-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h2 style="margin:0;color:#1e293b;"><i class="fas fa-calendar-check"></i> Attendance — {{ today|date:"F d, Y" }}</h2>
+                    <div style="display:flex;gap:8px;">
+                        <button type="button" class="btn btn-present status-btn" onclick="setAll('present')">✅ All Present</button>
+                        <button type="button" class="btn btn-absent status-btn" onclick="setAll('absent')">❌ All Absent</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                </div>
+                <table class="att-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Roll No.</th>
+                            <th>Class</th>
+                            <th>Present</th>
+                            <th>Absent</th>
+                            <th>Late</th>
+                            <th class="subj-header">Subject</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>
+                            <div class="stu-cell">
+                                <div class="stu-ava">{{ student.name|slice:":1"|upper }}</div>
+                                <span>{{ student.name }}</span>
+                            </div>
+                        </td>
+                        <td>{{ student.roll_number|default:"—" }}</td>
+                        <td>{{ student.student_class }}{{ student.section }}</td>
+                        <td style="text-align:center;">
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                                <label style="cursor:pointer;">
+                                    <input type="radio" name="att_{{ student.id }}" value="present" data-stu="{{ student.id }}" class="att-radio attended"
+                                        {% if att_map.stu_id.present == 'present' %}checked{% endif %} style="accent-color:#10b981;width:18px;height:18px;">
+                                </label>
+                            </div>
+                        </td>
+                        <td style="text-align:center;">
+                            <label style="cursor:pointer;">
+                                <input type="radio" name="att_{{ student.id }}" value="absent" data-stu="{{ student.id }}" class="att-radio attended"
+                                    {% if att_map.stu_id.absent == 'absent' %}checked{% endif %} style="accent-color:#ef4444;width:18px;height:18px;">
+                            </label>
+                        </td>
+                        <td style="text-align:center;">
+                            <label style="cursor:pointer;">
+                                <input type="radio" name="att_{{ student.id }}" value="late" data-stu="{{ student.id }}" class="att-radio attended"
+                                    style="accent-color:#f59e0b;width:18px;height:18px;">
+                            </label>
+                        </td>
+                        <td style="text-align:center;color:#94a3b8;font-size:.85rem;">{{ student.roll_number|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">No students found for the selected class.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+    <script>
+        function setAll(status) {
+            document.querySelectorAll('.att-radio').forEach(r => {
+                r.checked = (r.value === status);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const checked = document.querySelectorAll('.att-radio:checked');
+            if (!checked.length) setAll('present');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="content=device-width, initial-scale=1.0">
+    <title>User Permissions — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-users-cog"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/rbac/"><i class="fas fa-user-shield"></i> Roles</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div style="max-width:1400px;margin:0 auto;padding:30px 20px;">
+        <h2><i class="fas fa-users-cog"></i> User Permissions Overview</h2><hr>
+        <div class="card"><div class="card-body table-responsive">
+            <table class="table table-hover table-sm"><thead><tr>
+                <th>User</th><th>Role</th>
+                <th>Students</th><th>Teachers</th><th>Subjects</th>
+                <th>Fees</th><th>Exams</th><th>Attendance</th>
+                <th>Materials</th><th>Reports</th><th>System</th>
+            </tr></thead><tbody>
+            {% for profile in profiles %}
+            <tr>
+                <td>{{ profile.user.get_full_name|default:profile.user.username }}</td>
+                <td>
+                    <span class="badge {% if profile.role.code in 'super_admin admin' %}bg-danger{% else %}bg-primary{% endif %}">
+                        {{ profile.role.name }}</span>
+                </td>
+                <td>{% if profile.can_manage_students %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-times-circle text-muted"></i>{% endif %}</td>
+                <td>{% if profile.can_manage_teachers %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-times-circle text-muted"></i>{% endif %}</td>
+                <td>{% if profile.can_manage_subjects %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-times-circle text-muted"></i>{% endif %}</td>
+                <td>{% if profile.can_manage_fees %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-times-circle text-muted"></i>{% endif %}</td>
+                <td>{% if profile.can_manage_exams %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-times-circle text-muted"></i>{% endif %}</td>
+                <td>{% if profile.can_manage_attendance %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-times-circle text-muted"></i>{% endif %}</td>
+                <td>{% if profile.can_manage_materials %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-times-circle text-muted"></i>{% endif %}</td>
+                <td>{% if profile.can_view_reports %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-times-circle text-muted"></i>{% endif %}</td>
+                <td>{% if profile.can_manage_system %}<i class="fas fa-check-circle text-success"></i>{% else %}<i class="fas fa-times-circle text-muted"></i>{% endif %}</td>
+            </tr>{% endfor %}
+            {% if not profiles %}<tr><td colspan="11" class="text-center text-muted">No user profiles found.</td></tr>{% endif %}
+            </tbody></table>
+        </div></div>
+    </div>
+</body>
+</html>

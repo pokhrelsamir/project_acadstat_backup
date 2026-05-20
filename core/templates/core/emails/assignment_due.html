@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head><title>Assignment Reminder</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #3b82f6; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="margin:0;">&#128218; New Assignment</h1>
+    <p style="margin:5px 0 0;">{{ subject_name }} — Class {{ target_class }}</p>
+  </div>
+  <div style="background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none;">
+    <h2 style="color:#1f2937; margin-top:0;">{{ title }}</h2>
+    {% if description %}
+    <p style="color:#4b5563;">{{ description }}</p>
+    {% endif %}
+    <div style="background:#fef3c7; border-left:4px solid #f59e0b; padding:15px; margin:15px 0; border-radius:4px;">
+      <strong>&#128197; Due Date:</strong> {{ due_date }}
+      <br><strong>&#11088; Total Marks:</strong> {{ total_marks }}
+    </div>
+    <div style="text-align:center; margin: 20px 0;">
+      <a href="{{ link_url }}" style="background:#3b82f6; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold;">View Assignment</a>
+    </div>
+    <p style="font-size:0.85em; color:#6b7280;">This is an automated notification from your school management system.</p>
+  </div>
+</body>
+</html>

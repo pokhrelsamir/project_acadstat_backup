@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Report — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .rp-wrapper{max-width:1400px;margin:0 auto;padding:30px;background:#f8fafc;min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .filter-row{display:flex;gap:12px;align-items:center;margin-bottom:20px;background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);flex-wrap:wrap;}
+        .filter-row select,.filter-row input{padding:8px 12px;border:2px solid #e2e8f0;border-radius:8px;}
+        .att-card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;overflow-x:auto;}
+        .att-table{width:100%;border-collapse:collapse;}
+        .att-table th{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:14px;text-align:center;font-weight:600;}
+        .att-table td{padding:12px;text-align:center;border-bottom:1px solid #f1f5f9;font-size:.9rem;}
+        .att-table tr:hover td{background:#f8fafc;}
+        .pct-cell{font-weight:700;font-size:1rem;}
+        .progress-bar-wrap{background:#e2e8f0;border-radius:8px;overflow:hidden;height:8px;width:120px;margin:0 auto;}
+        .progress-bar{height:8px;border-radius:8px;transition:width .5s;}
+        .pct-badge{padding:4px 14px;border-radius:20px;font-weight:700;font-size:.85rem;}
+        .pct-good{background:#d1fae5;color:#065f46;}
+        .pct-warn{background:#fef3c7;color:#92400e;}
+        .pct-bad{background:#fef2f2;color:#dc2626;}
+        .att-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:.78rem;font-weight:600;}
+        .badge-present{background:#d1fae5;color:#065f46;}
+        .badge-absent{background:#fef2f2;color:#dc2626;}
+        .badge-late{background:#fef3c7;color:#92400e;}
+        @media(max-width:768px){.rp-wrapper{padding:15px;}.filter-row{flex-direction:column;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-chart-bar"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/attendance/"><i class="fas fa-calendar-check"></i> Mark Attendance</a>
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="rp-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-chart-pie"></i> Attendance Report</h1>
+            <span style="color:#64748b;font-size:.9rem;">Period: {{ start|date:"M d" }} – {{ end|date:"M d, Y" }}</span>
+        </div>
+        <form method="get" class="filter-row">
+            <label style="font-size:.85rem;font-weight:600;color:#64748b;">From:</label>
+            <input type="date" name="start_date" value="{{ start|date:'Y-m-d' }}" onchange="this.form.submit()">
+            <label style="font-size:.85rem;font-weight:600;color:#64748b;">To:</label>
+            <input type="date" name="end_date" value="{{ end|date:'Y-m-d' }}" onchange="this.form.submit()">
+            <select name="student_class" onchange="this.form.submit()">
+                <option value="">All Classes</option>
+                {% for cls in available_classes %}
+                    <option value="{{ cls }}"{% if selected_class == cls %}selected{% endif %}>{{ cls }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <div class="att-card">
+            <table class="att-table">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Name</th><th>Class</th><th>Days Recorded</th>
+                        <th>Present</th><th>Absent</th><th>Late</th>
+                        <th>Att. %</th><th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for student, data in per_student.items %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        {% with pct=data.percentage t=data.total pr=data.present ab=data.absent lt=data.late %}
+                        <td>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;color:white;font-size:.7rem;font-weight:700;">{{ student.name|slice:":1"|upper }}</div>
+                                <span style="font-weight:500;">{{ student.name }}</span>
+                            </div>
+                        </td>
+                        <td>{{ student.student_class }}{{ student.section }}</td>
+                        <td>{{ t }}</td>
+                        <td><span class="att-badge badge-present"><i class="fas fa-check"></i> {{ pr }}</span></td>
+                        <td><span class="att-badge badge-absent"><i class="fas fa-times"></i> {{ ab }}</span></td>
+                        <td><span class="att-badge badge-late"><i class="fas fa-clock"></i> {{ lt }}</span></td>
+                        <td>
+                            <div class="pct-badge {% if pct >= 90 %}pct-good{% elif pct >= 75 %}pct-warn{% else %}pct-bad{% endif %}">{{ pct }}%</div>
+                        </td>
+                        <td>
+                            <div class="progress-bar-wrap">
+                                <div class="progress-bar" style="width:{{ pct }}%;background:{% if pct >= 90 %}#10b981{% elif pct >= 75 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                            </div>
+                        </td>
+                        {% endwith %}
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="9" style="text-align:center;padding:40px;color:#94a3b8;">No attendance data found for the selected period.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

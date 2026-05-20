@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>Low Attendance Alert</title></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #f59e0b; color: white; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="margin:0;">&#128204; Attendance Alert</h1>
+    <p style="margin:5px 0 0;">{{ student_name }} — Class {{ student_class }}</p>
+  </div>
+  <div style="background: #f9fafb; padding: 20px; border: 1px solid #e5e7eb; border-top: none;">
+    <p>Dear {{ guardian_name }},</p>
+    <p>We would like to inform you that your ward's attendance record requires attention:</p>
+    <div style="background:#fff; border:1px solid #e5e7eb; padding:15px; border-radius:8px; margin:15px 0; text-align:center;">
+      <p style="margin:0; font-size:2em; font-weight:bold; color:#ef4444;">{{ attendance_percentage }}%</p>
+      <p style="margin:5px 0 0; color:#4b5563;">Current Attendance (Threshold: {{ threshold }}%)</p>
+    </div>
+    <p>Regular attendance is essential for academic success. We encourage you to ensure your ward attends classes consistently.</p>
+    <p>For questions, please contact the school office.</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Seating Plan — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--bg:#f8fafc;}
+        .spc-wrapper{max-width:700px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .back-link{display:inline-flex;align-items:center;gap:8px;color:var(--pri);text-decoration:none;font-weight:600;margin-bottom:20px;}
+        .card{background:white;border-radius:16px;padding:28px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .card h2{margin:0 0 18px;font-size:1.05rem;color:#1e293b;}
+        .form-group{margin-bottom:14px;}
+        .form-group label{display:block;font-size:.82rem;font-weight:700;color:#64748b;margin-bottom:4px;}
+        .form-group input,.form-group select{width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;font-family:inherit;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-ghost{background:#f1f5f9;color:#64748b;}
+        #resultBox{display:none;border-radius:10px;padding:16px;margin-top:14px;}
+        .rb-ok{background:#d1fae5;color:#065f46;}
+        .rb-err{background:#fee2e2;color:#991b1b;}
+        .info-note{font-size:.82rem;color:#64748b;border-left:4px solid var(--warn);padding:10px 14px;background:#fffbeb;border-radius:6px;margin-bottom:16px;}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-chair"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/seating-plans/"><i class="fas fa-arrow-left"></i> Plans</a>
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="spc-wrapper">
+        <a href="{% url 'core:seating_plan_list' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Plans</a>
+
+        <div class="card">
+            <h2><i class="fas fa-chair" style="color:var(--pri);"></i> Configure Seating Plan</h2>
+            <p style="font-size:.82rem;color:#64748b;margin:-8px 0 20px;line-height:1.5;">
+                Select an exam and add one or more rooms. The system auto-allocates students from the exam's target class/section, ordered by roll number.
+            </p>
+            <form id="spForm" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Select Exam *</label>
+                    <select name="exam_id" id="examSelect" required style="width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;">
+                        <option value="">-- Choose Exam --</option>
+                        {% for exam in exams %}
+                        <option value="{{ exam.id }}">
+                            {{ exam.title }} — {{ exam.subject.name }} — {{ exam.target_class }}{% if exam.target_section %} {{ exam.target_section }}{% endif %} ({{ exam.exam_date|date:'M d, Y' }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Room Name *</label>
+                    <input type="text" name="room_name" id="roomName" required placeholder="e.g. Hall 1, Room A">
+                </div>
+                <div class="form-group">
+                    <label>Room Capacity</label>
+                    <input type="number" name="room_capacity" id="roomCapacity" value="30" min="1" max="200">
+                </div>
+                <div class="form-group">
+                    <label>Arrangement Type</label>
+                    <select name="arrangement_type" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;">
+                        <option value="row_wise">Row Wise</option>
+                        <option value="column_wise">Column Wise</option>
+                        <option value="checkerboard">Checkerboard</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" onclick="return createPlan()">
+                    <i class="fas fa-magic"></i> Create & Auto-Allocate
+                </button>
+            </form>
+            <div id="resultBox"></div>
+        </div>
+    </div>
+    <script>
+        function createPlan() {
+            const examId = document.getElementById('examSelect').value;
+            const room = document.getElementById('roomName').value.trim();
+            const capacity = document.getElementById('roomCapacity').value;
+            if (!examId || !room) { alert('Exam and Room Name are required.'); return false; }
+
+            const fd = new FormData();
+            fd.append('exam_id', examId);
+            fd.append('room_name', room);
+            fd.append('room_capacity', capacity);
+            fd.append('arrangement_type', document.querySelector('[name=arrangement_type]').value);
+            fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch('{% url "core:seating_plan_create" %}', {
+                method: 'POST', body: fd,
+            }).then(r => r.json()).then(data => {
+                const box = document.getElementById('resultBox');
+                box.style.display = 'block';
+                if (data.success) {
+                    box.className = 'rb-ok';
+                    box.innerHTML = '<b>✅ '+data.message+'</b>';
+                    setTimeout(() => location.href = '{% url "core:seating_plan_list" %}', 1500);
+                } else {
+                    box.className = 'rb-err';
+                    box.innerHTML = '<b>❌ '+data.message+'</b>';
+                }
+            });
+            return false;
+        }
+    </script>
+</body>
+</html>

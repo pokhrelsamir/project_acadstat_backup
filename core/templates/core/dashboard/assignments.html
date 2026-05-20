@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignments — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--bg:#f8fafc;}
+        .asg-wrapper{max-width:1100px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-sm{padding:6px 12px;font-size:.82rem;}
+        .card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+        .form-row label{font-size:.85rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;}
+        .form-row input,.form-row select,.form-row textarea{width:100%;max-width:280px;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;font-family:inherit;}
+        .form-row textarea{min-height:60px;max-width:100%;width:100%!important;}
+        .asg-list{display:flex;flex-direction:column;gap:12px;}
+        .asg-item{background:#f8fafc;border-radius:12px;padding:16px 20px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:16px;transition:.3s;}
+        .asg-item:hover{border-color:var(--pri);}
+        .asg-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+        .ic-pri{background:rgba(102,126,234,.1);color:var(--pri);}
+        .ic-ok{background:rgba(16,185,129,.1);color:var(--ok);}
+        .ic-warn{background:rgba(245,158,11,.1);color:var(--warn);}
+        .asg-info{flex:1;}
+        .asg-info h4{margin:0 0 4px 0;font-size:.95rem;color:#1e293b;}
+        .asg-meta{font-size:.82rem;color:#64748b;}
+        .asg-meta span{margin-right:12px;}
+        .pri-badge{padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;}
+        .pri-high{background:rgba(239,68,68,.12);color:#ef4444;}
+        .pri-med{background:rgba(245,158,11,.12);color:#f59e0b;}
+        .pri-low{background:rgba(16,185,129,.12);color:#10b981;}
+        .sub-count{font-size:.82rem;color:#64748b;}
+        .sub-count span{font-weight:700;color:var(--pri);}
+        @media(max-width:768px){.asg-wrapper{padding:15px;}.asg-list{gap:8px;}.asg-item{flex-wrap:wrap;}.form-row{flex-direction:column;}.form-row input,.form-row select{max-width:100%;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-tasks"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/add-marks/"><i class="fas fa-plus-circle"></i> Add Marks</a>
+            <a href="/course-materials/"><i class="fas fa-folder-open"></i> Materials</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="asg-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-tasks"></i> Assignments</h1>
+            <button class="btn btn-primary" onclick="toggleForm()"><i class="fas fa-plus"></i> New Assignment</button>
+        </div>
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;color:{% if m.tags=='error' %}#dc2626{% else %}#16a34a{% endif %};background:{% if m.tags=='error' %}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+
+        <div class="card" id="createForm" style="display:none;">
+            <h3 style="margin-top:0;color:#1e293b;"><i class="fas fa-pen"></i> Create New Assignment</h3>
+            <form method="post">{% csrf_token %}
+                <div class="form-row">
+                    <input required style="max-width:100%;" placeholder="Assignment Title" name="title">
+                    <select name="subject" required>
+                        <option value="">Select Subject</option>
+                        {% for s in teacher_subjects %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+                    </select>
+                    <select name="target_class" required>
+                        <option value="">Target Class</option>
+                        {% for c in available_classes %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <textarea name="description" placeholder="Assignment description..."></textarea>
+                </div>
+                <div class="form-row">
+                    <input type="number" name="total_marks" value="10" min="1" style="max-width:120px;" title="Total Marks">
+                    <select name="priority">
+                        <option value="low">Low Priority</option>
+                        <option value="medium" selected>Medium Priority</option>
+                        <option value="high">High Priority</option>
+                    </select>
+                    <input type="datetime-local" name="due_date" style="max-width:200px;">
+                    <div style="margin-left:20px;">
+                        <input type="checkbox" id="pub" name="is_published" checked>
+                        <label for="pub" style="color:#374151;font-size:.88rem;">Publish immediately</label>
+                    </div>
+                </div>
+                <button type="submit" name="action" value="create" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Publish Assignment</button>
+            </form>
+        </div>
+
+        <div class="asg-list">
+            {% for a in assignments %}
+            <div class="asg-item">
+                <div class="asg-icon {% if a.is_overdue %}ic-warn{% else %}ic-ok{% endif %}">
+                    <i class="fas fa-{% if a.is_overdue %}clock{% else %}check-circle{% endif %}"></i>
+                </div>
+                <div class="asg-info">
+                    <h4>{{ a.title }}
+                        {% if a.priority == 'high' %}<span class="pri-badge pri-high">High</span>{% endif %}
+                        {% if a.priority == 'medium' %}<span class="pri-badge pri-med">MED</span>{% endif %}
+                    </h4>
+                    <div class="asg-meta">
+                        <span><i class="fas fa-book"></i> {{ a.subject.name }}</span>
+                        <span><i class="fas fa-users"></i> {{ a.target_class }}{{ a.target_section }}</span>
+                        <span><i class="fas fa-clock"></i> {{ a.due_date|date:"M d, Y g:i a" }}</span>
+                        <span><i class="fas fa-star"></i> {{ a.total_marks }} marks</span>
+                    </div>
+                    <div class="sub-count">
+                        <span>{{ a.submissions_count }}</span> submitted · <span>{{ a.pending_count }}</span> pending
+                    </div>
+                </div>
+                <a href="{% url 'core:assignment_detail' a.id %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-user-check"></i> Grade
+                </a>
+            </div>
+            {% empty %}
+            <div style="text-align:center;padding:60px;color:#94a3b8;">
+                <i class="fas fa-clipboard-list" style="font-size:3rem;margin-bottom:16px;display:block;"></i>
+                <p>No assignments yet. Click "New Assignment" to get started.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script>function toggleForm(){var e=document.getElementById('createForm');e.style.display=e.style.display==='none'?'block':'none';}</script>
+</body>
+</html>

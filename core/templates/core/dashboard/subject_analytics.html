@@ -1,0 +1,163 @@
+{% extends 'core/dashboard/dashboard.html' %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:24px;">
+    <div>
+      <h1>📊 Subject Analytics</h1>
+      <p class="dashboard-subtitle">Per-subject performance insights — class average, distribution &amp; student trends</p>
+    </div>
+    <div>
+      <a href="{% url 'core:performance_heatmap' %}" class="btn btn-secondary">
+        <i class="fas fa-th"></i> Heatmap View
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;
+              padding:20px;margin-bottom:28px;">
+    <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+      <div>
+        <label style="display:block;font-size:.85rem;color:var(--text-secondary);margin-bottom:4px;">Subject</label>
+        <select name="subject" class="form-control" style="min-width:200px;" onchange="this.form.submit()">
+          <option value="">All subjects</option>
+          {% for s in available_subjects %}
+          <option value="{{ s.id }}" {% if subject_id == s.id|stringformat:"s" %}selected{% endif %}>
+            {{ s.name }} ({{ s.code }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:.85rem;color:var(--text-secondary);margin-bottom:4px;">Terminal</label>
+        <select name="terminal" class="form-control" style="min-width:140px;" onchange="this.form.submit()">
+          {% for t in terminals %}
+          <option value="{{ t }}" {% if t == terminal %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <noscript><button type="submit" class="btn btn-primary">Apply</button></noscript>
+    </form>
+  </div>
+
+  {% if subject_obj %}
+  <h3 style="color:var(--text-primary);margin-bottom:20px;">{{ subject_obj.name }} — {{ subject_obj.code }}</h3>
+  {% endif %}
+
+  {% if total > 0 %}
+  <!-- KPI Stat Cards -->
+  <div class="stats-grid" style="margin-bottom:24px;">
+    <div class="stat-card" style="background:var(--accent-gradient);color:#fff;">
+      <div style="font-size:.85rem;opacity:.8;">Class Average</div>
+      <div style="font-size:2rem;font-weight:800;">{{ avg_pct }}%</div>
+    </div>
+    <div class="stat-card" style="background:var(--success-gradient);color:#fff;">
+      <div style="font-size:.85rem;opacity:.8;">Highest Score</div>
+      <div style="font-size:2rem;font-weight:800;">{{ highest_pct }}%</div>
+    </div>
+    <div class="stat-card" style="background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);color:#fff;">
+      <div style="font-size:.85rem;opacity:.8;">Lowest Score</div>
+      <div style="font-size:2rem;font-weight:800;">{{ lowest_pct }}%</div>
+    </div>
+    <div class="stat-card" style="background:var(--warning-gradient);color:#fff;">
+      <div style="font-size:.85rem;opacity:.8;">Pass Rate</div>
+      <div style="font-size:2rem;font-weight:800;">{{ pass_rate }}%</div>
+      <div style="font-size:.8rem;opacity:.8;">{{ pass_count }} / {{ total }} passed</div>
+    </div>
+  </div>
+
+  <!-- Histogram + Insights -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;">
+    <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:24px;">
+      <h4 style="margin:0 0 16px 0;">Score Distribution</h4>
+      <canvas id="histogramChart" height="240"></canvas>
+    </div>
+    <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:24px;">
+      <h4 style="margin:0 0 16px 0;">Insights</h4>
+      {% for line in insight_lines %}
+      <div style="padding:10px 14px;border-radius:8px;margin-bottom:8px;font-size:.9rem;
+                  background:#f0f9ff;border-left:4px solid #3b82f6;color:#1e40af;">
+        {{ line }}
+      </div>
+      {% endfor %}
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--card-border);
+                  font-size:.8rem;color:var(--text-secondary);">
+        Analysing {{ total }} result{{ total|pluralize }} across
+        {% for t in running_terminals %}{{ t }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        terminal{{ running_terminals|length|pluralize }}.
+      </div>
+    </div>
+  </div>
+
+  <!-- Trend table — each row has: student.name, marks_by_term dict, arrow -->
+  <div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;
+              padding:24px;overflow-x:auto;">
+    <h4 style="margin:0 0 16px 0;">Student Trends — Last {{ running_terminals|length }} Terminal{{ running_terminals|pluralize }}</h4>
+
+    <table style="width:100%;border-collapse:collapse;min-width:480px;">
+      <thead>
+        <tr style="background:#f1f5f9;">
+          <th style="padding:10px 14px;text-align:left;">Student</th>
+          {% for t in running_terminals %}
+          <th style="padding:10px 14px;text-align:center;white-space:nowrap;">{{ t }} Terminal</th>
+          {% endfor %}
+          <th style="padding:10px 14px;text-align:center;white-space:nowrap;">Trend</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in trend_rows %}
+        <tr style="border-top:1px solid var(--card-border);">
+          <td style="padding:8px 14px;font-weight:600;white-space:nowrap;">{{ row.student.name }}</td>
+          {% for t, mark in row.mark_tuples %}
+          <td style="padding:8px 14px;text-align:center;font-family:monospace;white-space:nowrap;">{{ mark|default:"-" }}</td>
+          {% endfor %}
+          <td style="padding:8px 14px;text-align:center;white-space:nowrap;">
+            {% if row.arrow == "up" %}<span style="color:#16a34a;font-size:1.2rem;">↑</span>
+            {% elif row.arrow == "down" %}<span style="color:#dc2626;font-size:1.2rem;">↓</span>
+            {% else %}<span style="color:#64748b;">→</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div style="text-align:center;padding:60px;color:var(--text-secondary);">
+    <i class="fas fa-chart-bar" style="font-size:3.5rem;display:block;opacity:.3;margin-bottom:16px;"></i>
+    <p>No results to display yet. Add marks for students to see analytics.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% if total > 0 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const labels = {{ bins_labels|safe }};
+  const data   = {{ bins|safe }};
+  new Chart(document.getElementById("histogramChart"), {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Students",
+        data: data,
+        backgroundColor: ["#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6","#6366f1"],
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false },
+                 tooltip: { callbacks: { label: function(ctx) { return " "+ctx.parsed.y+" student(s)"; } } } },
+      scales: {
+        x: { title: { display: true, text: "Score Range (%)" } },
+        y: { title: { display: true, text: "Count" }, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}

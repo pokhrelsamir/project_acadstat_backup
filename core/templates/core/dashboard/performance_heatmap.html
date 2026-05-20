@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Heatmap — AcadStat</title>
+    {% load static %}
+    {% load core_extras %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        (function(){ const saved=localStorage.getItem('theme'); const t=saved||'dark'; document.documentElement.setAttribute('data-theme',t); })();
+    </script>
+    <style>
+        .heatmap-wrap{max-width:1200px;margin:0 auto;padding:2rem;}
+        .hm-card{background:var(--bg-card);border-radius:16px;padding:2rem;border:1px solid var(--border-color);box-shadow:0 4px 20px rgba(0,0,0,.12);}
+        .hm-title{font-size:1.3rem;font-weight:700;color:var(--text-primary);margin-bottom:1.5rem;}
+        .hm-legend{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+        .hm-legend span{padding:4px 12px;border-radius:8px;font-size:.8rem;font-weight:600;color:#fff;}
+        .hm-table{width:100%;border-collapse:collapse;}
+        .hm-table th{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:.75rem;font-size:.8rem;white-space:nowrap;}
+        .hm-table th.sticky{position:sticky;left:0;z-index:2;}
+        .hm-table td{padding:10px;text-align:center;border-bottom:1px solid var(--border-color);font-weight:700;}
+        .hm-table td.sticky{position:sticky;left:0;background:var(--bg-card);z-index:1;text-align:left;padding-left:1rem;font-weight:500;}
+        .hm-pct-cell{width:52px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#fff;transition:all .2s;cursor:default;}
+        .hm-pct-cell:hover{transform:scale(1.15);z-index:4;position:relative;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+        .hm-avg-cell{font-weight:700;font-size:1rem;}
+        .hm-avg-bar{background:#334155;border-radius:20px;height:8px;margin-top:4px;overflow:hidden;}
+        .hm-avg-fill{height:8px;border-radius:20px;transition:width .5s;}
+        .hm-sub-avg{display:flex;align-items:center;justify-content:center;gap:.5rem;color:var(--text-secondary);font-size:.85rem;font-weight:600;}
+        .hm-sub-avg-bar{background:#334155;border-radius:20px;height:6px;flex:1;max-width:60px;overflow:hidden;}
+        .hm-sub-avg-fill{height:6px;border-radius:20px;}
+        @media(max-width:768px){ .heatmap-wrap{padding:1rem;} .hm-table{font-size:.75rem;} .hm-pct-cell{width:38px;height:32px;font-size:.8rem;} }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-th"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/smart-dashboard/"><i class="fas fa-chart-line"></i> Analytics</a>
+            <a href="/ai-recommendations/" class="active"><i class="fas fa-robot"></i> AI Recs</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <button class="theme-toggle" id="themeToggle"><svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/></svg><svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+        </div>
+    </nav>
+    <div class="heatmap-wrap">
+        <a href="/teacher-dashboard/" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        <div class="hm-card">
+            <h2 class="hm-title"><i class="fas fa-th-large"></i> Class Performance Heatmap</h2>
+            <form method="GET" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:end;margin-bottom:1.5rem;">
+                <div style="flex:1;min-width:160px;">
+                    <label style="color:var(--text-secondary);font-size:.85rem;display:block;margin-bottom:.4rem;"><i class="fas fa-school"></i> Class</label>
+                    <select name="student_class" class="form-control" onchange="this.form.submit()" style="padding:10px 14px;border-radius:8px;background:var(--input-bg);color:var(--text-primary);border:1px solid var(--border-color);">
+                        <option value="">All Classes</option>
+                        {% for cls in available_classes %}
+                        <option value="{{ cls }}" {% if selected_class == cls %}selected{% endif %}>{{ cls }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+
+            <div class="hm-legend">
+                <span style="background:#10b981;">≥80% Excellent</span>
+                <span style="background:#3b82f6;">60–79% Good</span>
+                <span style="background:#f59e0b;">40–59% Pass</span>
+                <span style="background:#ef4444;">0–39% Fail</span>
+                <span style="background:#334155;">No data</span>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="hm-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky" style="background:linear-gradient(135deg,#667eea,#764ba2);">Student</th>
+                            {% for subj in subjects %}
+                            <th style="background:linear-gradient(135deg,#667eea,#764ba2);" title="{{ subj.name }}">{{ subj.code|default:subj.name|slice:":8" }}</th>
+                            {% endfor %}
+                            <th style="background:linear-gradient(135deg,#4F46E5,#5B2CC5);">Avg</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in row_data %}
+                        <tr>
+                            <td class="sticky" style="background:var(--bg-card);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ row.student.name }}">{{ row.student.name }}</td>
+                            {% for cell in row.cells %}
+                            <td>
+                                {% if cell.pct is not None %}
+                                <div class="hm-pct-cell" style="background:{{ cell.color }};" title="{{ cell.pct }}%">{{ cell.pct }}%</div>
+                                {% else %}
+                                <div class="hm-pct-cell" style="background:#334155;" title="—">&mdash;</div>
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                            <td class="hm-avg-cell">
+                                <div>{{ row.avg }}%</div>
+                                <div class="hm-avg-bar"><div class="hm-avg-fill" style="width:{{ row.avg }}%;background:linear-gradient(90deg,#667eea,#10b981);"></div></div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td class="sticky" style="background:var(--input-bg);font-weight:700;color:var(--text-primary);">Subj Avg</td>
+                            {% for subj in subjects %}
+                            <td style="font-weight:700;">
+                                {% with sv=subj_avg|get_item:subj.id %}
+                                {% if sv %}
+                                <div class="hm-sub-avg">{{ sv }}%<div class="hm-sub-avg-bar"><div class="hm-sub-avg-fill" style="width:{{ sv }}%;background:{% if sv >= 80 %}#10b981{% elif sv >= 60 %}#3b82f6{% elif sv >= 40 %}#f59e0b{% else %}#ef4444{% endif %};"></div></div></div>
+                                {% else %}
+                                <div style="color:var(--text-secondary);font-size:.8rem;">—</div>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% if not row_data %}
+            <div style="text-align:center;padding:3rem;color:var(--text-secondary);">
+                <i class="fas fa-th" style="font-size:3rem;opacity:.3;margin-bottom:1rem;display:block;"></i>
+                <p>No results to display. Add marks for your students first.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        document.getElementById('themeToggle').addEventListener('click',function(){
+            const t=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
+            document.documentElement.setAttribute('data-theme',t);
+            localStorage.setItem('theme',t);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcements — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;--bg:#f8fafc;}
+        .ann-wrapper{max-width:900px;margin:0 auto;padding:30px;background:var(--bg);min-height:calc(100vh - 70px);}
+        .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+        .page-header h1{font-size:1.6rem;color:#1e293b;font-weight:700;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:10px;font-size:.88rem;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;border:none;}
+        .btn-primary{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-urgent{background:var(--err);color:white;}
+        .form-card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1);border:1px solid #e2e8f0;margin-bottom:20px;}
+        .form-card h3{margin-top:0;color:#1e293b;}
+        .form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+        .form-row label{font-size:.85rem;font-weight:600;color:#64748b;display:block;margin-bottom:4px;}
+        .form-row input,.form-row select,.form-row textarea{width:100%;max-width:280px;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:.88rem;font-family:inherit;}
+        .form-row textarea{max-width:100%;/*!important*/width:100%!important;min-height:80px;}
+        .frow-end{margin-left:auto;}
+        .ann-list{display:flex;flex-direction:column;gap:14px;}
+        .ann-card{background:white;border-radius:14px;padding:20px 24px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:5px solid var(--pri);transition:.3s;}
+        .ann-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1);}
+        .ann-urgent{border-left-color:var(--err);}
+        .ann-low{border-left-color:#94a3b8;}
+        .ann-high{border-left-color:var(--warn);}
+        .ann-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+        .ann-top h3{margin:0;font-size:1.05rem;color:#1e293b;}
+        .ann-meta{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:#64748b;}
+        .ann-tags{display:flex;gap:6px;flex-wrap:wrap;}
+        .ann-cancel{background:none;border:none;color:#94a3b8;cursor:pointer;font-size:.8rem;text-decoration:underline;}
+        @media(max-width:768px){.ann-wrapper{padding:15px;}.form-row{flex-direction:column;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-bullhorn"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/teacher-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/assignments/"><i class="fas fa-tasks"></i> Assignments</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="ann-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-bullhorn"></i> Announcements</h1>
+            <button class="btn btn-primary" onclick="toggleForm()"><i class="fas fa-plus"></i> New</button>
+        </div>
+        {% if messages %}{% for m in messages %}
+        <div style="border-radius:10px;margin-bottom:16px;padding:12px 18px;font-size:.88rem;color:{# if m.tags=='error'}#dc2626{% else %}#16a34a{% endif %};background:{# if m.tags=='error'}#fef2f2{% else %}#f0fdf4{% endif %};">{{ m }}</div>
+        {% endfor %}{% endif %}
+        <div class="form-card" id="createForm" style="display:none;">
+            <h3><i class="fas fa-pen"></i> Post Announcement</h3>
+            <form method="post">{% csrf_token %}
+                <div class="form-row">
+                    <input required style="max-width:340px;" placeholder="Announcement Title" name="title">
+                    <select name="audience">
+                        <option value="all">All</option>
+                        <option value="students">Students Only</option>
+                        <option value="class">Specific Class</option>
+                    </select>
+                    <div style="display:flex;align-items:flex-end;gap:0;">
+                        <input name="target_class" style="max-width:100px;" placeholder="Class #">
+                        <div style="margin-bottom:10px;margin-left:8px;">
+                            <label style="font-size:.82rem;color:#64748b;">Expiry</label>
+                            <input type="date" name="expires_at" style="padding:8px;border:2px solid #e2e8f0;border-radius:8px;">
+                        </div>
+                    </div>
+                    <div class="frow-end">
+                        <select name="priority" style="max-width:100px;">
+                            <option value="low">Low</option><option value="medium" selected>Med</option>
+                            <option value="high">High</option><option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row"><textarea class="fr-after" name="content" placeholder="Announcement content..." style="width:100%!important;max-width:100%!important;"></textarea></div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Publish</button>
+            </form>
+        </div>
+        <div class="ann-list">
+            {% for ann in announcements %}
+            <div class="ann-card {% if ann.priority == 'urgent' %}ann-urgent{% elif ann.priority == 'high' %}ann-high{% elif ann.priority == 'low' %}ann-low{% endif %}">
+                <div class="ann-top">
+                    <h3>{{ ann.title }}</h3>
+                    <div class="ann-tags">
+                        <span class="ex-badge {% if ann.audience == 'all' %}ex-terminal{% else %}ex-unit{% endif %}">{{ ann.get_priority_display|upper }}</span>
+                        <span style="font-size:.82rem;color:#94a3b8;">→ {{ ann.get_audience_display }}</span>
+                    </div>
+                </div>
+                <p style="color:#374151;font-size:.9rem;line-height:1.6;margin:0 0 8px 0;">{{ ann.content }}</p>
+                <div class="ann-meta">
+                    <span><i class="fas fa-user"></i> {{ ann.published_by.get_full_name }}</span>
+                    <span><i class="fas fa-clock"></i> {{ ann.published_at|default:ann.created_at|date:"M d, Y g:i a" }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align:center;padding:60px;color:#94a3b8;background:white;border-radius:16px;">
+                <i class="fas fa-bullhorn" style="font-size:2.5rem;margin-bottom:16px;display:block;"></i>
+                <p>No active announcements.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script>
+        function toggleForm(){var f=document.getElementById('createForm');f.style.display=f.style.display==='none'?'block':'none';}
+    </script>
+</body>
+</html>

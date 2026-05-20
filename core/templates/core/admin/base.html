@@ -1,0 +1,123 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+
+<script>
+(function () {
+    const savedTheme = localStorage.getItem("adminTheme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+})();
+
+
+</script>
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+
+<link rel="stylesheet"
+      href="{% static 'css/admin.css' %}">
+
+<style>
+
+body {
+    background: var(--admin-bg);
+    color: var(--text-primary);
+}
+
+#header {
+    background: var(--primary-gradient);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+#content {
+    background: var(--admin-content-bg);
+}
+
+.module {
+    background: var(--module-bg);
+}
+
+.row1 { background: var(--row1-bg); }
+.row2 { background: var(--row2-bg); }
+
+thead th {
+    background: var(--card-bg);
+    color: var(--text-secondary);
+}
+
+tbody tr:hover {
+    background: var(--row2-bg);
+}
+
+input, select, textarea {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.user-profile-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-profile-photo {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:white;
+    font-weight:bold;
+}
+
+.theme-toggle-admin {
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    border:none;
+    background:rgba(255,255,255,0.2);
+    color:white;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.theme-toggle-admin:hover {
+    background:rgba(255,255,255,0.35);
+    transform:scale(1.1);
+}
+
+.flatpickr-calendar {
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+}
+
+[data-theme="dark"] .flatpickr-calendar {
+    background:#1e293b;
+}
+
+[data-theme="light"] .flatpickr-calendar {
+    background:#ffffff;
+}
+
+@media (max-width:768px){
+    #header {
+        flex-direction: column;
+        gap:10px;
+    }
+}
+
+
+
+</style>
+
+{% endblock %}

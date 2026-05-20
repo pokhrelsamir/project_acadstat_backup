@@ -1,0 +1,57 @@
+{% extends 'core/dashboard/dashboard.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>📥 Import Questions</h1>
+    <p class="dashboard-subtitle">Upload a JSON file to bulk-import questions into your question bank.</p>
+  </div>
+
+  <div style="max-width:680px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:32px;">
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div style="margin-bottom:24px;">
+        <label style="display:block;font-weight:600;margin-bottom:8px;">JSON File *</label>
+        <input type="file" name="file" accept=".json" required class="form-control"
+               style="padding:10px;border:2px dashed #cbd5e1;border-radius:8px;" />
+        <p style="font-size:.85rem;color:var(--text-secondary);margin-top:8px;">
+          Each entry must include: <code>subject</code>, <code>question_text</code>,
+          <code>question_type</code>, <code>correct_answer</code>,
+          <code>difficulty</code>, <code>chapter</code>, and <code>marks</code>.
+          Optional: <code>options</code> (array of <code>{"key":"A","text":"…"}</code>).
+        </p>
+      </div>
+
+      <div style="margin-bottom:24px;background:#f8fafc;border-radius:8px;padding:16px;font-size:.85rem;">
+        <strong>Sample JSON:</strong>
+        <pre style="margin:10px 0 0 0;overflow-x:auto;background:#1e293b;color:#e2e8f0;border-radius:6px;padding:12px;font-size:.8rem;">[
+  {
+    "subject": "MAT101",
+    "question_text": "What is 2 + 2?",
+    "question_type": "mcq",
+    "options": [
+      {"key": "A", "text": "3"},
+      {"key": "B", "text": "4"},
+      {"key": "C", "text": "5"}
+    ],
+    "correct_answer": "B",
+    "difficulty": "easy",
+    "chapter": "Chapter 1: Arithmetic",
+    "marks": 1,
+    "tags": "math, basic"
+  }
+]</pre>
+      </div>
+
+      <div style="display:flex;gap:12px;">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-upload"></i> Import Questions
+        </button>
+        <a href="{% url 'core:question_bank' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

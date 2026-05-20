@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ invoice.invoice_number }} — AcadStat</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root{--pri:#667eea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444;}
+        @media print{body *{visibility:hidden;}#invDetail,#invDetail *{visibility:visible;}#invDetail{position:absolute;left:0;top:0;width:100%;}}
+        .invd-wrapper{max-width:800px;margin:0 auto;padding:30px;background:#f8fafc;min-height:calc(100vh - 70px);}
+        .invd{background:white;border-radius:20px;padding:48px;box-shadow:0 8px 40px rgba(0,0,0,.1);}
+        .invd-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;}
+        .invd-header .brand h1{font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--pri),#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+        .invd-header .brand p{font-size:.92rem;color:#64748b;margin-top:4px;}
+        .invd-header .status{font-size:.85rem;font-weight:700;padding:6px 18px;border-radius:20px;}
+        .st-DRAFT{background:rgba(245,158,11,.12);color:#f59e0b;}
+        .st-SENT{background:rgba(102,126,234,.12);color:#667eea;}
+        .st-PAID{background:rgba(16,185,129,.12);color:#10b981;}
+        .st-OVERDUE{background:rgba(239,68,68,.12);color:#ef4444;}
+        .st-CANCELLED{background:rgba(148,163,184,.12);color:#64748b;}
+        .invd-meta{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;}
+        .meta-box{background:#f8fafc;border-radius:12px;padding:16px;}
+        .meta-box .lbl{font-size:.78rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+        .meta-box .val{font-size:1rem;font-weight:600;color:#1e293b;}
+        .li-table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+        .li-table th{background:#f1f5f9;color:#64748b;font-size:.8rem;text-transform:uppercase;padding:10px 14px;text-align:left;}
+        .li-table td{padding:12px 14px;border-bottom:1px solid #f1f5f9;font-size:.92rem;}
+        .li-table .qty{text-align:center;}.li-table .right{text-align:right;}
+        .totals{margin-left:auto;max-width:300px;}
+        .tot-row{display:flex;justify-content:space-between;padding:8px 0;font-size:.9rem;color:#64748b;}
+        .tot-row.final{border-top:2px solid #e2e8f0;font-size:1.1rem;font-weight:700;color:#1e293b;padding-top:12px;}
+        .actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;}
+        .btn{padding:10px 22px;border-radius:10px;cursor:pointer;text-decoration:none;font-weight:600;font-size:.9rem;border:none;display:inline-flex;align-items:center;gap:6px;}
+        .btn-pri{background:linear-gradient(135deg,var(--pri),#764ba2);color:white;}
+        .btn-sec{background:#f1f5f9;color:#1e293b;}
+        @media(max-width:600px){.invd{padding:20px;}.invd-meta{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h2 class="logo"><i class="fas fa-file-invoice"></i> AcadStat</h2>
+        <div class="nav-links">
+            <a href="/invoices/"><i class="fas fa-list"></i> Invoices</a>
+            <a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+    <div class="invd-wrapper">
+        <div id="invDetail" class="inv-inv">
+            <div class="invd">
+                <div class="invd-header">
+                    <div class="brand">
+                        <h1>AcadStat</h1>
+                        <p>Academic Management System</p>
+                        <p style="font-size:.8rem;margin-top:2px;">
+                            {% if invoice.subscription %}{{ invoice.subscription.institution }}{% else %}System Invoice{% endif %}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="status st-{{ invoice.status }}">{{ invoice.get_status_display }}</span>
+                    </div>
+                </div>
+                <div class="invd-meta">
+                    <div class="meta-box">
+                        <div class="lbl">Invoice Number</div>
+                        <div class="val">{{ invoice.invoice_number }}</div>
+                    </div>
+                    <div class="meta-box">
+                        <div class="lbl">Issued To</div>
+                        <div class="val">{{ invoice.issued_to }}</div>
+                    </div>
+                    <div class="meta-box">
+                        <div class="lbl">Issue Date</div>
+                        <div class="val">{{ invoice.issue_date|date:"d F Y" }}</div>
+                    </div>
+                    <div class="meta-box">
+                        <div class="lbl">Due Date</div>
+                        <div class="val" style="color:{% if invoice.status == 'PAID' %}#10b981{% elif invoice.due_date < today %}#ef4444{% else %}#1e293b{% endif %};">{{ invoice.due_date|date:"d F Y" }}</div>
+                    </div>
+                    {% if invoice.payment_link %}
+                    <div class="meta-box" style="grid-column:span 2;">
+                        <div class="lbl">Payment Link</div>
+                        <div class="val"><a href="{{ invoice.payment_link }}" target="_blank">{{ invoice.payment_link }}</a></div>
+                    </div>
+                    {% endif %}
+                </div>
+                <table class="li-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th><th style="text-align:center;width:80px;">Qty</th>
+                            <th style="text-align:right;width:120px;">Unit Price</th>
+                            <th style="text-align:right;width:120px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in invoice.line_items %}
+                    <tr>
+                        <td>{{ item.description }}</td>
+                        <td class="qty">{{ item.qty }}</td>
+                        <td class="right">Rs. {{ item.unit_price|floatformat:2 }}</td>
+                        <td class="right"><strong>Rs. {{ item.total|floatformat:2 }}</strong></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:16px;">No line items recorded.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="totals">
+                    <div class="tot-row"><span>Subtotal</span><span>Rs. {{ invoice.amount|floatformat:2 }}</span></div>
+                    <div class="tot-row"><span>Tax</span><span>Rs. {{ invoice.tax_amount|floatformat:2 }}</span></div>
+                    <div class="tot-row final"><span>Total</span><span style="color:#10b981;">Rs. {{ invoice.total_amount|floatformat:2 }}</span></div>
+                </div>
+                <div class="actions">
+                    <a href="{% url 'core:invoice_pdf' invoice.invoice_number %}" class="btn btn-pri"><i class="fas fa-file-pdf"></i> Download PDF</a>
+                    <button onclick="window.print()" class="btn btn-sec"><i class="fas fa-print"></i> Print</button>
+                    <a href="/invoices/" class="btn btn-sec">← Back</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
